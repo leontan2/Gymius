@@ -2,11 +2,11 @@
   "name": "user",
   "version": "1.0.0",
   "description": "",
-  "main": "app.ts",
+  "main": "server.ts",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "ts-node app.ts"
+    "dev": "nodemon"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.5",
