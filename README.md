@@ -12,7 +12,7 @@ Gymius is a full-stack gym tracker with an Angular frontend and a Spring Boot AP
 ## Prerequisites
 
 - Java 17 or newer, with `JAVA_HOME` pointing at the JDK
-- Maven 3.9 or newer
+- Maven 3.9 or newer, or the included Maven wrapper in `backend/`
 - Node.js 20.11 or newer and npm
 - Docker, if you want the provided PostgreSQL container
 
@@ -74,8 +74,10 @@ Run the backend:
 
 ```bash
 cd backend
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
+
+On Windows PowerShell, use `.\mvnw.cmd spring-boot:run`.
 
 Run the frontend in a second terminal:
 
@@ -93,10 +95,68 @@ H2 is useful for quick local testing without PostgreSQL:
 
 ```bash
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 Google OAuth environment variables are still required for login. The H2 console is enabled at `http://localhost:8080/h2-console` when the `local` profile is active.
+
+## Deploy on Vercel + Render + Neon
+
+The easiest free deployment split is:
+
+- Frontend: Vercel static app from the `frontend` directory
+- Backend: Render Web Service from the `backend` directory using the Docker runtime
+- Database: Neon PostgreSQL
+
+Create a Neon database first. Use Neon's PostgreSQL connection details for the Render backend. The Spring Boot app expects a JDBC URL, so it should look like this:
+
+```text
+jdbc:postgresql://your-neon-host.neon.tech/your-db?sslmode=require
+```
+
+Create the Render backend as a Web Service:
+
+```text
+Runtime: Docker
+Root Directory: backend
+Instance Type: Free
+```
+
+Set these Render environment variables:
+
+```text
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+FRONTEND_URL=https://your-vercel-app.vercel.app
+CORS_ALLOWED_ORIGINS=https://your-vercel-app.vercel.app
+DATABASE_URL=jdbc:postgresql://your-neon-host.neon.tech/your-db?sslmode=require
+DATABASE_USERNAME=your-neon-user
+DATABASE_PASSWORD=your-neon-password
+SESSION_COOKIE_SAME_SITE=none
+SESSION_COOKIE_SECURE=true
+```
+
+Render provides `PORT` automatically. The backend reads it with a local fallback to `8080`.
+
+Create the Vercel frontend from the `frontend` directory. Set this Vercel environment variable:
+
+```text
+FRONTEND_API_URL=https://your-render-backend.onrender.com
+```
+
+The Vercel build runs `npm run build`, which writes the production Angular API URL from `FRONTEND_API_URL`.
+
+Update your Google OAuth Web Client after both apps have URLs:
+
+```text
+Authorized JavaScript origin:
+https://your-vercel-app.vercel.app
+
+Authorized redirect URI:
+https://your-render-backend.onrender.com/login/oauth2/code/google
+```
+
+Keep only the `openid`, `profile`, and `email` scopes.
 
 ## API
 
@@ -129,6 +189,10 @@ DATABASE_URL
 DATABASE_USERNAME
 DATABASE_PASSWORD
 SERVER_PORT
+PORT
+SESSION_COOKIE_SAME_SITE
+SESSION_COOKIE_SECURE
+FRONTEND_API_URL
 ```
 
-For production, point `DATABASE_URL` at PostgreSQL, set `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS` to your deployed frontend origin, and keep Google credentials in your host's secret manager.
+For production, point `DATABASE_URL` at PostgreSQL, set `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS` to your deployed frontend origin, set secure cross-site cookies with `SESSION_COOKIE_SAME_SITE=none` and `SESSION_COOKIE_SECURE=true`, and keep Google credentials in your host's secret manager.
