@@ -33,7 +33,7 @@ public class OpenAiMealVisionClient implements MealVisionClient {
     public OpenAiMealVisionClient(
             ObjectMapper objectMapper,
             @Value("${app.openai.api-key:}") String apiKey,
-            @Value("${app.openai.model:gpt-4.1-mini}") String model,
+            @Value("${app.openai.model:gpt-5-mini}") String model,
             @Value("${app.openai.image-detail:auto}") String imageDetail
     ) {
         this.objectMapper = objectMapper;

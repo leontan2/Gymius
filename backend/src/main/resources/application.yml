@@ -56,7 +56,7 @@ app:
     default-daily-calories: ${DEFAULT_DAILY_CALORIES:2200}
   openai:
     api-key: ${OPENAI_API_KEY:}
-    model: ${OPENAI_MODEL:gpt-4.1-mini}
+    model: ${OPENAI_MODEL:gpt-5-mini}
     image-detail: ${OPENAI_IMAGE_DETAIL:auto}
 
 ---
