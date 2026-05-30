@@ -13,6 +13,7 @@ import {
   LucideSun,
   LucideTrendingUp,
   LucideTrophy,
+  LucideUtensils,
   LucideUser,
   LucideX,
   provideLucideIcons
@@ -42,6 +43,7 @@ import { ThemeService } from '../core/theme.service';
       LucideSun,
       LucideTrendingUp,
       LucideTrophy,
+      LucideUtensils,
       LucideUser,
       LucideX
     )
@@ -58,6 +60,7 @@ export class ShellComponent {
     { label: 'Workouts', path: '/workouts', icon: 'history' },
     { label: 'Progress', path: '/progress', icon: 'trending-up' },
     { label: 'Records', path: '/records', icon: 'trophy' },
+    { label: 'Nutrition', path: '/nutrition', icon: 'utensils' },
     { label: 'Profile', path: '/profile', icon: 'user' }
   ];
 

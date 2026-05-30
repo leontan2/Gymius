@@ -1,0 +1,191 @@
+<section class="page-header nutrition-header">
+  <div>
+    <p class="eyebrow">Nutrition</p>
+    <h1>Scan a meal, keep moving.</h1>
+    <p class="page-subtitle">Camera to estimate to confirmed calories, with room for your correction before it counts.</p>
+  </div>
+  <button class="btn primary" type="button" (click)="openFilePicker(cameraInput)">
+    <svg lucideIcon="camera" size="18"></svg>
+    <span>Snap Meal Photo</span>
+  </button>
+</section>
+
+<input
+  #cameraInput
+  hidden
+  type="file"
+  accept="image/jpeg,image/png,image/webp"
+  capture="environment"
+  (change)="onFileSelected($event)"
+>
+<input
+  #galleryInput
+  hidden
+  type="file"
+  accept="image/jpeg,image/png,image/webp"
+  (change)="onFileSelected($event)"
+>
+
+<div class="loading-state" *ngIf="loadingToday">Loading nutrition...</div>
+<div class="error-state" *ngIf="error">{{ error }}</div>
+<div class="success-state" *ngIf="savedMessage">{{ savedMessage }}</div>
+
+<ng-container *ngIf="today as data">
+  <section class="metrics-grid nutrition-metrics">
+    <article class="metric-card nutrition-total">
+      <span class="metric-icon rose"><svg lucideIcon="flame" size="20"></svg></span>
+      <small>Today</small>
+      <strong>{{ data.caloriesConsumed | number: '1.0-0' }}</strong>
+      <span>of {{ data.goal.dailyCalories | number: '1.0-0' }} kcal</span>
+      <div class="calorie-track" aria-hidden="true">
+        <span [style.width.%]="calorieProgress"></span>
+      </div>
+    </article>
+    <article class="metric-card">
+      <span class="metric-icon"><svg lucideIcon="target" size="20"></svg></span>
+      <small>Remaining</small>
+      <strong>{{ data.remainingCalories | number: '1.0-0' }}</strong>
+      <span>kcal left</span>
+    </article>
+    <article class="metric-card">
+      <span class="metric-icon amber"><svg lucideIcon="salad" size="20"></svg></span>
+      <small>Macros</small>
+      <strong>{{ data.proteinGrams | number: '1.0-0' }}g</strong>
+      <span>protein logged</span>
+    </article>
+    <article class="metric-card target-editor">
+      <span class="metric-icon blue"><svg lucideIcon="badge-check" size="20"></svg></span>
+      <small>Daily target</small>
+      <form [formGroup]="goalForm" (ngSubmit)="saveGoal()">
+        <input type="number" min="800" max="8000" formControlName="dailyCalories" aria-label="Daily calorie target">
+        <button class="btn secondary" type="submit" [disabled]="savingGoal">
+          {{ savingGoal ? 'Saving...' : 'Save' }}
+        </button>
+      </form>
+    </article>
+  </section>
+
+  <section class="scanner-grid">
+    <article class="scanner-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Camera</p>
+          <h2>AI Food Calorie Scanner</h2>
+        </div>
+        <span class="chart-chip"><svg lucideIcon="sparkles" size="16"></svg> OpenAI analysis</span>
+      </div>
+
+      <div class="meal-preview" [class.has-image]="previewUrl">
+        <img *ngIf="previewUrl; else emptyPreview" [src]="previewUrl" alt="Meal preview">
+        <ng-template #emptyPreview>
+          <div>
+            <svg lucideIcon="camera" size="34"></svg>
+            <strong>Snap Meal Photo</strong>
+            <span>Use a clear top-down or angled plate photo.</span>
+          </div>
+        </ng-template>
+      </div>
+
+      <div class="scanner-actions">
+        <button class="btn primary" type="button" (click)="openFilePicker(cameraInput)" [disabled]="analyzing">
+          <svg lucideIcon="camera" size="18"></svg>
+          <span>Snap Meal Photo</span>
+        </button>
+        <button class="btn secondary" type="button" (click)="openFilePicker(galleryInput)" [disabled]="analyzing">
+          <svg lucideIcon="image-up" size="18"></svg>
+          <span>Upload from gallery</span>
+        </button>
+      </div>
+
+      <p class="scanner-file" *ngIf="selectedFileName">
+        <svg lucideIcon="upload" size="16"></svg>
+        {{ selectedFileName }}
+      </p>
+
+      <div class="loading-state scanner-loading" *ngIf="analyzing">
+        <svg lucideIcon="sparkles" size="18"></svg>
+        Analyzing your meal...
+      </div>
+    </article>
+
+    <article class="analysis-panel">
+      <div *ngIf="analysis; else waitingForPhoto">
+        <p class="eyebrow">Analysis</p>
+        <h2>{{ analysis.userMessage }}</h2>
+        <div class="kcal-result">~{{ analysis.estimatedCalories | number: '1.0-0' }} kcal</div>
+        <p class="confidence-note">
+          <svg lucideIcon="circle-alert" size="17"></svg>
+          {{ analysis.confidenceNote || ('Estimate range: ' + analysis.calorieMin + '-' + analysis.calorieMax + ' kcal.') }}
+        </p>
+
+        <div class="food-list">
+          <div *ngFor="let item of analysis.foodItems">
+            <span>
+              <strong>{{ item.name }}</strong>
+              <small>{{ item.portionEstimate }}</small>
+            </span>
+            <b>{{ item.estimatedCalories | number: '1.0-0' }} kcal</b>
+          </div>
+        </div>
+
+        <div class="macro-grid">
+          <span><small>Protein</small><strong>{{ (analysis.proteinGrams ?? 0) | number: '1.0-0' }}g</strong></span>
+          <span><small>Carbs</small><strong>{{ (analysis.carbsGrams ?? 0) | number: '1.0-0' }}g</strong></span>
+          <span><small>Fat</small><strong>{{ (analysis.fatGrams ?? 0) | number: '1.0-0' }}g</strong></span>
+          <span><small>Confidence</small><strong>{{ confidenceLabel(analysis.confidence) }}</strong></span>
+        </div>
+
+        <form class="confirm-form" [formGroup]="confirmForm" (ngSubmit)="saveEntry()" novalidate>
+          <label class="field">
+            <span>Correct estimate</span>
+            <input type="number" min="0" max="10000" formControlName="calories">
+            <small class="field-error" *ngIf="confirmForm.get('calories')?.invalid && confirmForm.get('calories')?.touched">
+              Enter a calorie estimate between 0 and 10000.
+            </small>
+          </label>
+          <label class="field">
+            <span>Notes</span>
+            <textarea rows="3" formControlName="notes" placeholder="Optional notes"></textarea>
+          </label>
+          <button class="btn primary" type="submit" [disabled]="saving">
+            <svg lucideIcon="badge-check" size="18"></svg>
+            <span>{{ saving ? 'Adding...' : 'Add to today\'s log' }}</span>
+          </button>
+        </form>
+      </div>
+
+      <ng-template #waitingForPhoto>
+        <div class="empty-state nutrition-empty">
+          <svg lucideIcon="sparkles" size="30"></svg>
+          <h3>Ready when your plate is</h3>
+          <p>Capture or upload a food image and Gymius will estimate calories, macros, and a confidence range.</p>
+        </div>
+      </ng-template>
+    </article>
+  </section>
+
+  <section class="section-block">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Today's log</p>
+        <h2>Confirmed meals</h2>
+      </div>
+      <span class="chart-chip"><svg lucideIcon="clock" size="16"></svg> {{ data.date | date: 'MMM d, y' }}</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!data.entries.length">
+      <h3>No meals logged yet</h3>
+      <p>Your confirmed AI scans will appear here.</p>
+    </div>
+
+    <div class="nutrition-log" *ngIf="data.entries.length">
+      <article class="nutrition-entry" *ngFor="let entry of data.entries">
+        <span>
+          <strong>{{ entry.foodItems }}</strong>
+          <small>{{ entry.mealTime | date: 'shortTime' }} · {{ confidenceLabel(entry.confidence) }} confidence</small>
+        </span>
+        <b>{{ entry.calories | number: '1.0-0' }} kcal</b>
+      </article>
+    </div>
+  </section>
+</ng-container>

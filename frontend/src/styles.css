@@ -729,6 +729,216 @@ svg[lucideIcon] {
   margin: 0;
 }
 
+.nutrition-header .btn {
+  white-space: nowrap;
+}
+
+.nutrition-metrics .target-editor {
+  gap: 0.65rem;
+}
+
+.target-editor form {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  margin-top: auto;
+}
+
+.target-editor input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  min-height: 42px;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  width: 100%;
+}
+
+.calorie-track {
+  background: var(--surface-2);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.calorie-track span {
+  background: linear-gradient(90deg, var(--rose), var(--amber));
+  display: block;
+  height: 100%;
+}
+
+.scanner-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  margin: 0 auto 1.4rem;
+  max-width: 1180px;
+}
+
+.scanner-panel,
+.analysis-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 1rem;
+}
+
+:root[data-theme='light'] .scanner-panel,
+:root[data-theme='light'] .analysis-panel {
+  background: var(--surface);
+}
+
+.meal-preview {
+  align-items: center;
+  aspect-ratio: 4 / 3;
+  background:
+    linear-gradient(135deg, rgba(61, 220, 151, 0.12), rgba(249, 178, 51, 0.08)),
+    var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  overflow: hidden;
+}
+
+.meal-preview img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.meal-preview div {
+  align-items: center;
+  color: var(--muted);
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.meal-preview strong {
+  color: var(--text);
+}
+
+.scanner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.scanner-file,
+.confidence-note {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  gap: 0.45rem;
+  line-height: 1.5;
+}
+
+.scanner-loading {
+  align-items: center;
+  display: flex;
+  gap: 0.45rem;
+  margin: 1rem 0 0;
+}
+
+.analysis-panel h2 {
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  line-height: 1.15;
+  margin: 0;
+}
+
+.kcal-result {
+  color: var(--accent);
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 900;
+  line-height: 1;
+  margin: 1rem 0 0.6rem;
+}
+
+.food-list,
+.macro-grid,
+.nutrition-log {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.food-list {
+  margin: 1rem 0;
+}
+
+.food-list div,
+.nutrition-entry {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.85rem;
+}
+
+.food-list small,
+.nutrition-entry small {
+  color: var(--muted);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.food-list b,
+.nutrition-entry b {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.macro-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.macro-grid span {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem;
+}
+
+.macro-grid small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.confirm-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.confirm-form .btn {
+  justify-self: flex-start;
+}
+
+.success-state {
+  background: rgba(61, 220, 151, 0.12);
+  border: 1px solid rgba(61, 220, 151, 0.28);
+  border-radius: 8px;
+  color: var(--accent);
+  margin: 0 auto 1rem;
+  max-width: 1180px;
+  padding: 1rem;
+}
+
+.nutrition-empty {
+  min-height: 420px;
+}
+
 .login-page {
   align-items: center;
   display: grid;
@@ -1001,6 +1211,10 @@ svg[lucideIcon] {
     width: 100%;
   }
 
+  .scanner-grid {
+    grid-template-columns: 1fr;
+  }
+
   .login-page {
     grid-template-columns: 1fr;
   }
@@ -1047,6 +1261,24 @@ svg[lucideIcon] {
 
   .chart-frame {
     height: 340px;
+  }
+
+  .scanner-actions,
+  .target-editor form,
+  .food-list div,
+  .nutrition-entry {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scanner-actions .btn,
+  .confirm-form .btn,
+  .target-editor .btn {
+    width: 100%;
+  }
+
+  .macro-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .phone-frame {

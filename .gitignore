@@ -5,3 +5,4 @@
 **/target
 **/.angular
 **/out-tsc
+*.log

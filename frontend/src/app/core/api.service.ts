@@ -5,6 +5,11 @@ import { environment } from '../../environments/environment';
 import {
   Dashboard,
   ExerciseLog,
+  MealAnalysis,
+  NutritionEntry,
+  NutritionEntryRequest,
+  NutritionGoal,
+  NutritionToday,
   PersonalRecord,
   ProgressSeries,
   UserProfile,
@@ -79,5 +84,29 @@ export class ApiService {
 
   personalRecords(): Observable<PersonalRecord[]> {
     return this.http.get<PersonalRecord[]>(`${this.baseUrl}/api/personal-records`, { withCredentials: true });
+  }
+
+  nutritionToday(): Observable<NutritionToday> {
+    return this.http.get<NutritionToday>(`${this.baseUrl}/api/nutrition/today`, { withCredentials: true });
+  }
+
+  analyzeMealImage(image: File): Observable<MealAnalysis> {
+    const body = new FormData();
+    body.append('image', image);
+    return this.http.post<MealAnalysis>(`${this.baseUrl}/api/nutrition/analyze-image`, body, {
+      withCredentials: true
+    });
+  }
+
+  createNutritionEntry(payload: NutritionEntryRequest): Observable<NutritionEntry> {
+    return this.http.post<NutritionEntry>(`${this.baseUrl}/api/nutrition/entries`, payload, {
+      withCredentials: true
+    });
+  }
+
+  updateNutritionGoal(payload: NutritionGoal): Observable<NutritionGoal> {
+    return this.http.put<NutritionGoal>(`${this.baseUrl}/api/nutrition/goals`, payload, {
+      withCredentials: true
+    });
   }
 }

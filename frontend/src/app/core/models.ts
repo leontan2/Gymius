@@ -68,3 +68,73 @@ export interface PersonalRecord {
   highestRepsDate: string;
   highestRepsWorkoutId: string;
 }
+
+export type NutritionConfidence = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export interface MealFoodItem {
+  name: string;
+  portionEstimate: string;
+  estimatedCalories: number;
+}
+
+export interface MealAnalysis {
+  estimatedCalories: number;
+  calorieMin: number;
+  calorieMax: number;
+  confidence: NutritionConfidence;
+  foodItems: MealFoodItem[];
+  proteinGrams: number | null;
+  carbsGrams: number | null;
+  fatGrams: number | null;
+  confidenceNote: string;
+  userMessage: string;
+}
+
+export interface NutritionEntry {
+  id: string;
+  entryDate: string;
+  mealTime: string;
+  source: string;
+  foodItems: string;
+  calories: number;
+  calorieMin: number | null;
+  calorieMax: number | null;
+  proteinGrams: number | null;
+  carbsGrams: number | null;
+  fatGrams: number | null;
+  confidence: NutritionConfidence;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NutritionEntryRequest {
+  entryDate: string;
+  foodItems: string;
+  calories: number;
+  calorieMin: number | null;
+  calorieMax: number | null;
+  proteinGrams: number | null;
+  carbsGrams: number | null;
+  fatGrams: number | null;
+  confidence: NutritionConfidence;
+  notes: string | null;
+}
+
+export interface NutritionGoal {
+  dailyCalories: number;
+  proteinGoalGrams: number | null;
+  carbsGoalGrams: number | null;
+  fatGoalGrams: number | null;
+}
+
+export interface NutritionToday {
+  date: string;
+  goal: NutritionGoal;
+  caloriesConsumed: number;
+  remainingCalories: number;
+  proteinGrams: number;
+  carbsGrams: number;
+  fatGrams: number;
+  entries: NutritionEntry[];
+}

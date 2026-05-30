@@ -8,6 +8,7 @@ Gymius is a full-stack gym tracker with an Angular frontend and a Spring Boot AP
 - Backend: Spring Boot, Spring Security, OAuth2 Client, Spring Data JPA
 - Database: PostgreSQL by default, H2 available with the `local` Spring profile
 - Auth: Google OAuth 2.0 with only `openid`, `profile`, and `email` scopes
+- AI: OpenAI vision analysis for the Food Calorie Scanner, with a mock provider for local development
 
 ## Prerequisites
 
@@ -68,6 +69,7 @@ $env:CORS_ALLOWED_ORIGINS="http://localhost:4200"
 $env:DATABASE_URL="jdbc:postgresql://localhost:5432/gymius"
 $env:DATABASE_USERNAME="gymius"
 $env:DATABASE_PASSWORD="gymius"
+$env:MEAL_VISION_PROVIDER="mock"
 ```
 
 Run the backend:
@@ -136,6 +138,10 @@ SESSION_COOKIE_SAME_SITE=none
 SESSION_COOKIE_SECURE=true
 SPRING_MAIN_LAZY_INITIALIZATION=true
 SPRING_DATA_JPA_REPOSITORIES_BOOTSTRAP_MODE=lazy
+MEAL_VISION_PROVIDER=openai
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_IMAGE_DETAIL=auto
 ```
 
 Render provides `PORT` automatically. The backend reads it with a local fallback to `8080`.
@@ -176,6 +182,10 @@ Authenticated API endpoints are session-based and require the Google login cooki
 - `DELETE /api/workouts/{workoutId}/exercises/{exerciseId}`
 - `GET /api/progress`
 - `GET /api/personal-records`
+- `GET /api/nutrition/today`
+- `POST /api/nutrition/analyze-image`
+- `POST /api/nutrition/entries`
+- `PUT /api/nutrition/goals`
 - `POST /api/logout`
 
 ## Configuration
@@ -197,6 +207,13 @@ SESSION_COOKIE_SECURE
 SPRING_MAIN_LAZY_INITIALIZATION
 SPRING_DATA_JPA_REPOSITORIES_BOOTSTRAP_MODE
 FRONTEND_API_URL
+MEAL_VISION_PROVIDER
+OPENAI_API_KEY
+OPENAI_MODEL
+OPENAI_IMAGE_DETAIL
+MEAL_IMAGE_MAX_BYTES
+MEAL_IMAGE_MAX_SIZE
+DEFAULT_DAILY_CALORIES
 ```
 
-For production, point `DATABASE_URL` at PostgreSQL, set `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS` to your deployed frontend origin, set secure cross-site cookies with `SESSION_COOKIE_SAME_SITE=none` and `SESSION_COOKIE_SECURE=true`, and keep Google credentials in your host's secret manager.
+For production, point `DATABASE_URL` at PostgreSQL, set `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS` to your deployed frontend origin, set secure cross-site cookies with `SESSION_COOKIE_SAME_SITE=none` and `SESSION_COOKIE_SECURE=true`, and keep Google/OpenAI credentials in your host's secret manager. Put `OPENAI_API_KEY` only on the backend host, never in Vercel or Angular.

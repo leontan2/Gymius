@@ -45,6 +45,11 @@ export const routes: Routes = [
           .then((module) => module.PersonalRecordsComponent)
       },
       {
+        path: 'nutrition',
+        loadComponent: () => import('./features/nutrition/nutrition.component')
+          .then((module) => module.NutritionComponent)
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./features/profile/profile.component')
           .then((module) => module.ProfileComponent)
