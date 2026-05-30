@@ -1,0 +1,57 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">History</p>
+    <h1>Workout log</h1>
+    <p class="page-subtitle">Search past sessions, reopen a workout, or prune duplicate entries.</p>
+  </div>
+  <a class="btn primary" routerLink="/workouts/new">
+    <svg lucideIcon="plus" size="18"></svg>
+    <span>New workout</span>
+  </a>
+</section>
+
+<section class="toolbar">
+  <label class="search-box">
+    <svg lucideIcon="search" size="18"></svg>
+    <input type="search" placeholder="Search exercise, date, or notes" [value]="query" (input)="updateQuery($event)">
+  </label>
+</section>
+
+<div class="loading-state" *ngIf="loading">Loading workouts...</div>
+<div class="error-state" *ngIf="error">{{ error }}</div>
+
+<div class="empty-state" *ngIf="!loading && !filteredWorkouts.length">
+  <h3>No workouts found</h3>
+  <p>Log a workout or adjust your search.</p>
+  <a class="btn primary" routerLink="/workouts/new">Start workout</a>
+</div>
+
+<section class="history-grid" *ngIf="filteredWorkouts.length">
+  <article class="history-card" *ngFor="let workout of filteredWorkouts; trackBy: trackByWorkoutId">
+    <div class="history-card-head">
+      <span class="date-pill"><svg lucideIcon="calendar-days" size="16"></svg>{{ workout.workoutDate | date: 'MMM d, y' }}</span>
+      <span>{{ workout.totalVolume | number: '1.0-0' }} lb</span>
+    </div>
+
+    <h2>{{ workout.exercises.length }} exercise{{ workout.exercises.length === 1 ? '' : 's' }}</h2>
+    <p *ngIf="workout.notes">{{ workout.notes }}</p>
+
+    <div class="exercise-tags">
+      <span *ngFor="let exercise of workout.exercises.slice(0, 4)">
+        <svg lucideIcon="dumbbell" size="14"></svg>
+        {{ exercise.exerciseName }}
+      </span>
+      <span *ngIf="workout.exercises.length > 4">+{{ workout.exercises.length - 4 }} more</span>
+    </div>
+
+    <div class="card-actions">
+      <a class="btn secondary" [routerLink]="['/workouts', workout.id, 'edit']">
+        <svg lucideIcon="pencil" size="16"></svg>
+        <span>Edit</span>
+      </a>
+      <button class="icon-btn danger" type="button" aria-label="Delete workout" (click)="deleteWorkout(workout)">
+        <svg lucideIcon="trash-2" size="18"></svg>
+      </button>
+    </div>
+  </article>
+</section>

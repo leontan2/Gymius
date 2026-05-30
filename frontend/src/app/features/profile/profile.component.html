@@ -1,0 +1,26 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Profile</p>
+    <h1>Google account</h1>
+    <p class="page-subtitle">Your Gymius profile is created from basic Google profile details.</p>
+  </div>
+</section>
+
+<section class="profile-panel" *ngIf="auth.user() as user">
+  <div class="profile-hero">
+    <img *ngIf="user.pictureUrl; else fallback" [src]="user.pictureUrl" [alt]="user.name">
+    <ng-template #fallback>
+      <span class="profile-avatar-fallback"><svg lucideIcon="user" size="42"></svg></span>
+    </ng-template>
+    <div>
+      <p class="eyebrow">Signed in as</p>
+      <h2>{{ user.name }}</h2>
+      <span><svg lucideIcon="mail" size="16"></svg>{{ user.email }}</span>
+    </div>
+  </div>
+
+  <div class="profile-note">
+    <svg lucideIcon="shield-check" size="20"></svg>
+    <p>Gymius stores your Google subject ID, name, email, and picture URL so your workouts stay private to your account.</p>
+  </div>
+</section>

@@ -1,0 +1,68 @@
+<div class="app-shell" [class.nav-open]="navOpen()">
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" routerLink="/dashboard" (click)="closeNav()">
+      <span class="brand-mark"><svg lucideIcon="dumbbell" size="24"></svg></span>
+      <span>
+        <strong>Gymius</strong>
+        <small>Train smarter</small>
+      </span>
+    </a>
+
+    <a class="btn primary new-workout" routerLink="/workouts/new" (click)="closeNav()">
+      <svg lucideIcon="plus" size="18"></svg>
+      <span>New workout</span>
+    </a>
+
+    <nav class="nav-list">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+        (click)="closeNav()"
+      >
+        <svg [lucideIcon]="item.icon" size="19"></svg>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="icon-text-btn" type="button" (click)="theme.toggle()">
+        <svg [lucideIcon]="theme.theme() === 'dark' ? 'sun' : 'moon'" size="18"></svg>
+        <span>{{ theme.theme() === 'dark' ? 'Light theme' : 'Dark theme' }}</span>
+      </button>
+
+      <button class="icon-text-btn danger" type="button" (click)="auth.logout()">
+        <svg lucideIcon="log-out" size="18"></svg>
+        <span>Log out</span>
+      </button>
+
+      <div class="user-chip" *ngIf="auth.user() as user">
+        <img *ngIf="user.pictureUrl; else initials" [src]="user.pictureUrl" [alt]="user.name">
+        <ng-template #initials>
+          <span class="avatar-fallback">{{ user.name.charAt(0) }}</span>
+        </ng-template>
+        <span>
+          <strong>{{ user.name }}</strong>
+          <small>{{ user.email }}</small>
+        </span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="mobile-bar">
+    <a class="mobile-brand" routerLink="/dashboard">
+      <svg lucideIcon="dumbbell" size="22"></svg>
+      <span>Gymius</span>
+    </a>
+    <button class="icon-btn" type="button" aria-label="Toggle navigation" (click)="toggleNav()">
+      <svg [lucideIcon]="navOpen() ? 'x' : 'menu'" size="22"></svg>
+    </button>
+  </div>
+
+  <button class="nav-scrim" type="button" aria-label="Close navigation" (click)="closeNav()"></button>
+
+  <main class="content-shell">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -2,3 +2,6 @@
 **/dist
 **/.env
 **/build
+**/target
+**/.angular
+**/out-tsc

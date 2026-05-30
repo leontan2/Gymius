@@ -1,0 +1,45 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Progress</p>
+    <h1>Strength progression</h1>
+    <p class="page-subtitle">Track max weight by exercise across logged workout dates.</p>
+  </div>
+</section>
+
+<div class="loading-state" *ngIf="loading">Loading progress...</div>
+<div class="error-state" *ngIf="error">{{ error }}</div>
+
+<ng-container *ngIf="!loading && !error">
+  <section class="metrics-grid two-up">
+    <article class="metric-card">
+      <span class="metric-icon"><svg lucideIcon="activity" size="20"></svg></span>
+      <small>Tracked exercises</small>
+      <strong>{{ totalTrackedExercises }}</strong>
+      <span>with logged data</span>
+    </article>
+    <article class="metric-card">
+      <span class="metric-icon amber"><svg lucideIcon="trending-up" size="20"></svg></span>
+      <small>Highest logged load</small>
+      <strong>{{ strongestLatestLift | number: '1.0-0' }}</strong>
+      <span>lb</span>
+    </article>
+  </section>
+
+  <section class="chart-panel" *ngIf="chartData.datasets.length">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Chart</p>
+        <h2>Top tracked lifts</h2>
+      </div>
+      <span class="chart-chip"><svg lucideIcon="bar-chart-3" size="16"></svg> Max weight</span>
+    </div>
+    <div class="chart-frame">
+      <canvas #progressCanvas></canvas>
+    </div>
+  </section>
+
+  <div class="empty-state" *ngIf="!chartData.datasets.length">
+    <h3>No progress yet</h3>
+    <p>Add workouts with weighted exercises to see trends here.</p>
+  </div>
+</ng-container>

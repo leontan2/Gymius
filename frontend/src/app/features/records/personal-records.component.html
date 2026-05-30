@@ -1,0 +1,38 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Records</p>
+    <h1>Personal records</h1>
+    <p class="page-subtitle">Highest weight and highest reps by exercise.</p>
+  </div>
+</section>
+
+<div class="loading-state" *ngIf="loading">Loading records...</div>
+<div class="error-state" *ngIf="error">{{ error }}</div>
+
+<div class="empty-state" *ngIf="!loading && !records.length">
+  <h3>No records yet</h3>
+  <p>Records appear automatically once exercises are logged.</p>
+  <a class="btn primary" routerLink="/workouts/new">Log workout</a>
+</div>
+
+<section class="record-grid" *ngIf="records.length">
+  <article class="record-card" *ngFor="let record of records">
+    <div class="record-card-head">
+      <span class="metric-icon amber"><svg lucideIcon="trophy" size="20"></svg></span>
+      <h2>{{ record.exerciseName }}</h2>
+    </div>
+
+    <div class="record-splits">
+      <div>
+        <small><svg lucideIcon="weight" size="15"></svg> Heaviest</small>
+        <strong>{{ record.highestWeight | number: '1.0-2' }} lb</strong>
+        <span>{{ record.repsAtHighestWeight }} reps on {{ record.highestWeightDate | date: 'MMM d, y' }}</span>
+      </div>
+      <div>
+        <small><svg lucideIcon="repeat-2" size="15"></svg> Most reps</small>
+        <strong>{{ record.highestReps }}</strong>
+        <span>{{ record.weightAtHighestReps | number: '1.0-2' }} lb on {{ record.highestRepsDate | date: 'MMM d, y' }}</span>
+      </div>
+    </div>
+  </article>
+</section>

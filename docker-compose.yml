@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gymius-postgres
+    environment:
+      POSTGRES_DB: gymius
+      POSTGRES_USER: gymius
+      POSTGRES_PASSWORD: gymius
+    ports:
+      - "5432:5432"
+    volumes:
+      - gymius-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymius -d gymius"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  gymius-postgres-data:
