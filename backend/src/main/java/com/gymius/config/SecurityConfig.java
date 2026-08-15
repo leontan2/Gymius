@@ -43,7 +43,6 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(csrfTokenRequestHandler)
-                        .ignoringRequestMatchers("/h2-console/**")
                 )
                 .cors(Customizer.withDefaults())
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
@@ -59,7 +58,6 @@ public class SecurityConfig {
                                 "/",
                                 "/error",
                                 "/health",
-                                "/h2-console/**",
                                 "/login/**",
                                 "/oauth2/**"
                         ).permitAll()

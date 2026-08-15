@@ -6,7 +6,7 @@ Gymius is a full-stack gym tracker with an Angular frontend and a Spring Boot AP
 
 - Frontend: Angular 22, TypeScript, Angular Router, Reactive Forms, Chart.js, @lucide/angular
 - Backend: Spring Boot 3.5, Spring Security, OAuth2 Client, Spring Data JPA
-- Database: PostgreSQL with Flyway migrations; H2 is available with the `local` Spring profile
+- Database: PostgreSQL with Flyway migrations in local development, CI, and production
 - Auth: Google OAuth 2.0 with only `openid`, `profile`, and `email` scopes
 - AI: OpenAI vision analysis for the Food Calorie Scanner, with a mock provider for local development
 
@@ -15,7 +15,7 @@ Gymius is a full-stack gym tracker with an Angular frontend and a Spring Boot AP
 - Java 17 or newer, with `JAVA_HOME` pointing at the JDK
 - Maven 3.9 or newer, or the included Maven wrapper in `backend/`
 - Node.js 22.22.3+, 24.15+, or 26+ and npm
-- Docker, if you want the provided PostgreSQL container
+- Docker, for the provided local PostgreSQL container
 
 ## Project Structure
 
@@ -91,13 +91,19 @@ npm start
 
 Open `http://localhost:4200`.
 
-## Run With H2
+## Run With the Local Profile
 
-H2 is useful for quick local testing without PostgreSQL:
+The local profile uses the same PostgreSQL and Flyway setup as production while enabling local authentication and the mock meal-vision provider. Start PostgreSQL first:
+
+```bash
+docker compose up -d postgres
+```
+
+Then run the backend:
 
 ```bash
 cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local -Dspring-boot.run.useTestClasspath=true
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 On Windows PowerShell, quote Maven properties containing dots and hyphens:
@@ -105,10 +111,10 @@ On Windows PowerShell, quote Maven properties containing dots and hyphens:
 ```powershell
 cd backend
 $env:JAVA_HOME="C:\\Program Files\\Java\\jdk-21"
-.\\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local" "-Dspring-boot.run.useTestClasspath=true"
+.\\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
-The local profile binds to `127.0.0.1`, uses an in-memory database, and enables the development user by default. Set `DEV_AUTH_BYPASS_ENABLED=false` to test Google OAuth. The H2 console is available at `http://localhost:8080/h2-console` only while this profile is active.
+The local profile binds to `127.0.0.1`, connects to `jdbc:postgresql://localhost:5432/gymius` by default, applies Flyway migrations, and enables the development user by default. Set `DEV_AUTH_BYPASS_ENABLED=false` to test Google OAuth. You can inspect the database with any PostgreSQL client using host `localhost`, port `5432`, database/user/password `gymius`, or point `DATABASE_URL` at a Neon development branch instead.
 
 ## Deploy on Vercel + Render + Neon
 
