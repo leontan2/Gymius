@@ -6,7 +6,7 @@ RUN mvn --batch-mode dependency:go-offline
 COPY src ./src
 RUN mvn --batch-mode package
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 RUN addgroup -S gymius && adduser -S gymius -G gymius
