@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   Dashboard,
-  ExerciseLog,
+  CsrfTokenResponse,
   MealAnalysis,
   NutritionEntry,
   NutritionEntryRequest,
@@ -29,84 +29,64 @@ export class ApiService {
   }
 
   me(): Observable<UserProfile> {
-    return this.http.get<UserProfile>(`${this.baseUrl}/api/me`, { withCredentials: true });
+    return this.http.get<UserProfile>(`${this.baseUrl}/api/me`);
+  }
+
+  csrfToken(): Observable<CsrfTokenResponse> {
+    return this.http.get<CsrfTokenResponse>(`${this.baseUrl}/api/csrf`);
   }
 
   logout(): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/api/logout`, {}, { withCredentials: true });
+    return this.http.post<void>(`${this.baseUrl}/api/logout`, {});
   }
 
   dashboard(): Observable<Dashboard> {
-    return this.http.get<Dashboard>(`${this.baseUrl}/api/dashboard`, { withCredentials: true });
+    return this.http.get<Dashboard>(`${this.baseUrl}/api/dashboard`);
   }
 
   workouts(): Observable<Workout[]> {
-    return this.http.get<Workout[]>(`${this.baseUrl}/api/workouts`, { withCredentials: true });
+    return this.http.get<Workout[]>(`${this.baseUrl}/api/workouts`);
   }
 
   workout(id: string): Observable<Workout> {
-    return this.http.get<Workout>(`${this.baseUrl}/api/workouts/${id}`, { withCredentials: true });
+    return this.http.get<Workout>(`${this.baseUrl}/api/workouts/${id}`);
   }
 
   createWorkout(payload: WorkoutRequest): Observable<Workout> {
-    return this.http.post<Workout>(`${this.baseUrl}/api/workouts`, payload, { withCredentials: true });
+    return this.http.post<Workout>(`${this.baseUrl}/api/workouts`, payload);
   }
 
   updateWorkout(id: string, payload: WorkoutRequest): Observable<Workout> {
-    return this.http.put<Workout>(`${this.baseUrl}/api/workouts/${id}`, payload, { withCredentials: true });
+    return this.http.put<Workout>(`${this.baseUrl}/api/workouts/${id}`, payload);
   }
 
   deleteWorkout(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/api/workouts/${id}`, { withCredentials: true });
-  }
-
-  addExercise(workoutId: string, payload: ExerciseLog): Observable<ExerciseLog> {
-    return this.http.post<ExerciseLog>(`${this.baseUrl}/api/workouts/${workoutId}/exercises`, payload, {
-      withCredentials: true
-    });
-  }
-
-  updateExercise(workoutId: string, exerciseId: string, payload: ExerciseLog): Observable<ExerciseLog> {
-    return this.http.put<ExerciseLog>(`${this.baseUrl}/api/workouts/${workoutId}/exercises/${exerciseId}`, payload, {
-      withCredentials: true
-    });
-  }
-
-  deleteExercise(workoutId: string, exerciseId: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/api/workouts/${workoutId}/exercises/${exerciseId}`, {
-      withCredentials: true
-    });
+    return this.http.delete<void>(`${this.baseUrl}/api/workouts/${id}`);
   }
 
   progress(): Observable<ProgressSeries[]> {
-    return this.http.get<ProgressSeries[]>(`${this.baseUrl}/api/progress`, { withCredentials: true });
+    return this.http.get<ProgressSeries[]>(`${this.baseUrl}/api/progress`);
   }
 
   personalRecords(): Observable<PersonalRecord[]> {
-    return this.http.get<PersonalRecord[]>(`${this.baseUrl}/api/personal-records`, { withCredentials: true });
+    return this.http.get<PersonalRecord[]>(`${this.baseUrl}/api/personal-records`);
   }
 
   nutritionToday(): Observable<NutritionToday> {
-    return this.http.get<NutritionToday>(`${this.baseUrl}/api/nutrition/today`, { withCredentials: true });
+    return this.http.get<NutritionToday>(`${this.baseUrl}/api/nutrition/today`);
   }
 
   analyzeMealImage(image: File): Observable<MealAnalysis> {
     const body = new FormData();
     body.append('image', image);
-    return this.http.post<MealAnalysis>(`${this.baseUrl}/api/nutrition/analyze-image`, body, {
-      withCredentials: true
-    });
+    return this.http.post<MealAnalysis>(`${this.baseUrl}/api/nutrition/analyze-image`, body);
   }
 
   createNutritionEntry(payload: NutritionEntryRequest): Observable<NutritionEntry> {
-    return this.http.post<NutritionEntry>(`${this.baseUrl}/api/nutrition/entries`, payload, {
-      withCredentials: true
-    });
+    return this.http.post<NutritionEntry>(`${this.baseUrl}/api/nutrition/entries`, payload);
   }
 
   updateNutritionGoal(payload: NutritionGoal): Observable<NutritionGoal> {
-    return this.http.put<NutritionGoal>(`${this.baseUrl}/api/nutrition/goals`, payload, {
-      withCredentials: true
-    });
+    return this.http.put<NutritionGoal>(`${this.baseUrl}/api/nutrition/goals`, payload);
   }
 }

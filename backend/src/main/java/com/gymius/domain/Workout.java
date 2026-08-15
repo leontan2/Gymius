@@ -72,6 +72,10 @@ public class Workout {
         exercises.add(exercise);
     }
 
+    public void touch() {
+        updatedAt = Instant.now();
+    }
+
     public UUID getId() {
         return id;
     }

@@ -12,7 +12,14 @@ export class ThemeService {
     effect(() => {
       const nextTheme = this.theme();
       document.documentElement.setAttribute('data-theme', nextTheme);
-      localStorage.setItem('gymius-theme', nextTheme);
+      document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+        ?.setAttribute('content', nextTheme === 'dark' ? '#07110f' : '#f4f7f5');
+
+      try {
+        localStorage.setItem('gymius-theme', nextTheme);
+      } catch {
+        // Theme persistence can be unavailable in privacy-restricted browser contexts.
+      }
     });
   }
 
@@ -21,7 +28,15 @@ export class ThemeService {
   }
 
   private initialTheme(): Theme {
-    const savedTheme = localStorage.getItem('gymius-theme');
-    return savedTheme === 'light' ? 'light' : 'dark';
+    try {
+      const savedTheme = localStorage.getItem('gymius-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        return savedTheme;
+      }
+    } catch {
+      // Fall through to the operating-system preference.
+    }
+
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   }
 }

@@ -6,21 +6,30 @@
   </div>
 </section>
 
-<section class="profile-panel" *ngIf="auth.user() as user">
-  <div class="profile-hero">
-    <img *ngIf="user.pictureUrl; else fallback" [src]="user.pictureUrl" [alt]="user.name">
-    <ng-template #fallback>
-      <span class="profile-avatar-fallback"><svg lucideIcon="user" size="42"></svg></span>
-    </ng-template>
-    <div>
-      <p class="eyebrow">Signed in as</p>
-      <h2>{{ user.name }}</h2>
-      <span><svg lucideIcon="mail" size="16"></svg>{{ user.email }}</span>
+@if (auth.user(); as user) {
+  <section class="profile-panel">
+    <div class="profile-hero">
+      @if (user.pictureUrl) {
+        <img
+          [src]="user.pictureUrl"
+          alt=""
+          width="96"
+          height="96"
+          decoding="async"
+          referrerpolicy="no-referrer"
+          >
+      } @else {
+        <span class="profile-avatar-fallback"><svg lucideUser size="42"></svg></span>
+      }
+      <div>
+        <p class="eyebrow">Signed in as</p>
+        <h2>{{ user.name }}</h2>
+        <span><svg lucideMail size="16"></svg>{{ user.email }}</span>
+      </div>
     </div>
-  </div>
-
-  <div class="profile-note">
-    <svg lucideIcon="shield-check" size="20"></svg>
-    <p>Gymius stores your Google subject ID, name, email, and picture URL so your workouts stay private to your account.</p>
-  </div>
-</section>
+    <div class="profile-note">
+      <svg lucideShieldCheck size="20"></svg>
+      <p>Gymius stores your Google subject ID, name, email, and picture URL so your workouts stay private to your account.</p>
+    </div>
+  </section>
+}

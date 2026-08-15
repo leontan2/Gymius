@@ -1,28 +1,16 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
-import {
-  LucideDynamicIcon,
-  LucideMail,
-  LucideShieldCheck,
-  LucideUser,
-  provideLucideIcons
-} from '@lucide/angular';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { LucideMail, LucideShieldCheck, LucideUser } from '@lucide/angular';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [
-    CommonModule,
-    LucideDynamicIcon
+    LucideMail,
+    LucideShieldCheck,
+    LucideUser
   ],
-  providers: [
-    provideLucideIcons(
-      LucideMail,
-      LucideShieldCheck,
-      LucideUser
-    )
-  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent implements OnInit {

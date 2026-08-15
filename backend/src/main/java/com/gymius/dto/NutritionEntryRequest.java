@@ -2,6 +2,7 @@ package com.gymius.dto;
 
 import com.gymius.domain.NutritionConfidence;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -35,12 +36,15 @@ public record NutritionEntryRequest(
         Integer calorieMax,
 
         @DecimalMin(value = "0.0", message = "Protein cannot be negative.")
+        @Digits(integer = 6, fraction = 2, message = "Protein must be a valid number.")
         BigDecimal proteinGrams,
 
         @DecimalMin(value = "0.0", message = "Carbs cannot be negative.")
+        @Digits(integer = 6, fraction = 2, message = "Carbs must be a valid number.")
         BigDecimal carbsGrams,
 
         @DecimalMin(value = "0.0", message = "Fat cannot be negative.")
+        @Digits(integer = 6, fraction = 2, message = "Fat must be a valid number.")
         BigDecimal fatGrams,
 
         NutritionConfidence confidence,

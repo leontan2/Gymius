@@ -5,4 +5,5 @@
 **/target
 **/.angular
 **/out-tsc
+frontend/src/environments/environment.generated.ts
 *.log

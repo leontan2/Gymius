@@ -7,110 +7,212 @@
   <a class="btn secondary" routerLink="/workouts">Back to history</a>
 </section>
 
-<div class="loading-state" *ngIf="loading">Loading workout...</div>
-<div class="error-state" *ngIf="error">{{ error }}</div>
+@if (loading) {
+  <div class="loading-state" role="status" aria-live="polite">Loading workout...</div>
+}
+@if (error) {
+  <div class="error-state" role="alert">
+    <span>{{ error }}</span>
+    @if (loadFailed) {
+      <button class="btn secondary" type="button" (click)="loadWorkout()">Retry</button>
+    }
+  </div>
+}
 
-<form class="workout-form" [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading" novalidate>
-  <section class="form-panel">
-    <div class="form-grid">
-      <label class="field">
-        <span><svg lucideIcon="calendar-days" size="16"></svg> Date</span>
-        <input type="date" formControlName="workoutDate" [max]="maxDate">
-        <small class="field-error" *ngIf="controlHasError(form.get('workoutDate'), 'required')">
-          Workout date is required.
-        </small>
-      </label>
-
-      <label class="field">
-        <span><svg lucideIcon="sticky-note" size="16"></svg> Session notes</span>
-        <input type="text" formControlName="notes" placeholder="Optional notes">
-        <small class="field-error" *ngIf="controlHasError(form.get('notes'), 'maxlength')">
-          Notes must be 1000 characters or less.
-        </small>
-      </label>
-    </div>
-  </section>
-
-  <section class="section-block">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Exercises</p>
-        <h2>Set log</h2>
+@if (!loading && !loadFailed) {
+  <form
+    class="workout-form"
+    [formGroup]="form"
+    [attr.aria-busy]="saving"
+    (ngSubmit)="save()"
+    novalidate
+    >
+    <section class="form-panel">
+      <div class="form-grid">
+        <label class="field">
+          <span><svg lucideCalendarDays size="16"></svg> Date</span>
+          <input
+            type="date"
+            formControlName="workoutDate"
+            [max]="maxDate"
+            required
+            [attr.aria-invalid]="controlIsInvalid(form.controls.workoutDate)"
+            [attr.aria-describedby]="controlIsInvalid(form.controls.workoutDate) ? 'workout-date-error' : null"
+            >
+          @if (controlHasError(form.controls.workoutDate, 'required')) {
+            <small id="workout-date-error" class="field-error">
+              Workout date is required.
+            </small>
+          }
+          @if (controlHasError(form.controls.workoutDate, 'futureDate')) {
+            <small id="workout-date-error" class="field-error">
+              Workout date cannot be in the future.
+            </small>
+          }
+          @if (controlHasError(form.controls.workoutDate, 'invalidDate')) {
+            <small id="workout-date-error" class="field-error">
+              Enter a valid workout date.
+            </small>
+          }
+        </label>
+        <label class="field">
+          <span><svg lucideStickyNote size="16"></svg> Session notes</span>
+          <textarea
+            rows="3"
+            formControlName="notes"
+            maxlength="1000"
+            placeholder="Optional notes"
+            [attr.aria-invalid]="controlIsInvalid(form.controls.notes)"
+            [attr.aria-describedby]="controlIsInvalid(form.controls.notes) ? 'workout-notes-error' : null"
+          ></textarea>
+          @if (controlHasError(form.controls.notes, 'maxlength')) {
+            <small id="workout-notes-error" class="field-error">
+              Notes must be 1000 characters or less.
+            </small>
+          }
+        </label>
       </div>
-      <button class="btn secondary" type="button" (click)="addExercise()">
-        <svg lucideIcon="plus" size="17"></svg>
-        <span>Add exercise</span>
+    </section>
+    <section class="section-block">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Exercises</p>
+          <h2>Set log</h2>
+        </div>
+        <button
+          class="btn secondary"
+          type="button"
+          [disabled]="saving || exercises.length >= maxExercises"
+          (click)="addExercise()"
+          >
+          <svg lucidePlus size="17"></svg>
+          <span>Add exercise</span>
+        </button>
+      </div>
+      <div formArrayName="exercises" class="exercise-stack">
+        @for (exerciseGroup of exercises.controls; track trackExercise($index, exerciseGroup); let i = $index) {
+          <article
+            class="exercise-editor"
+            [formGroupName]="i"
+            >
+            <div class="exercise-editor-head">
+              <h3>Exercise {{ i + 1 }}</h3>
+              <button
+                class="icon-btn danger"
+                type="button"
+                [attr.aria-label]="'Remove exercise ' + (i + 1)"
+                [disabled]="exercises.length === 1 || saving"
+                (click)="removeExercise(i)"
+                >
+                <svg lucideTrash2 size="18"></svg>
+              </button>
+            </div>
+            <div class="exercise-fields">
+              <label class="field exercise-name">
+                <span>Name</span>
+                <input
+                  type="text"
+                  formControlName="exerciseName"
+                  maxlength="120"
+                  autocomplete="off"
+                  placeholder="Bench press"
+                  required
+                  [attr.aria-invalid]="controlIsInvalid(exerciseGroup.controls.exerciseName)"
+                  [attr.aria-describedby]="controlIsInvalid(exerciseGroup.controls.exerciseName) ? 'exercise-name-error-' + i : null"
+                  >
+                @if (controlHasError(exerciseGroup.controls.exerciseName, 'required')) {
+                  <small [id]="'exercise-name-error-' + i" class="field-error">
+                    Exercise name is required.
+                  </small>
+                }
+                @if (controlHasError(exerciseGroup.controls.exerciseName, 'maxlength')) {
+                  <small [id]="'exercise-name-error-' + i" class="field-error">
+                    Use 120 characters or less.
+                  </small>
+                }
+              </label>
+              <label class="field">
+                <span>Sets</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  inputmode="numeric"
+                  formControlName="sets"
+                  required
+                  [attr.aria-invalid]="controlIsInvalid(exerciseGroup.controls.sets)"
+                  [attr.aria-describedby]="controlIsInvalid(exerciseGroup.controls.sets) ? 'exercise-sets-error-' + i : null"
+                  >
+                @if (controlIsInvalid(exerciseGroup.controls.sets)) {
+                  <small [id]="'exercise-sets-error-' + i" class="field-error">
+                    Enter between 1 and 100 sets.
+                  </small>
+                }
+              </label>
+              <label class="field">
+                <span>Reps</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  inputmode="numeric"
+                  formControlName="reps"
+                  required
+                  [attr.aria-invalid]="controlIsInvalid(exerciseGroup.controls.reps)"
+                  [attr.aria-describedby]="controlIsInvalid(exerciseGroup.controls.reps) ? 'exercise-reps-error-' + i : null"
+                  >
+                @if (controlIsInvalid(exerciseGroup.controls.reps)) {
+                  <small [id]="'exercise-reps-error-' + i" class="field-error">
+                    Enter between 1 and 1000 reps.
+                  </small>
+                }
+              </label>
+              <label class="field">
+                <span>Weight (lb)</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="999999.99"
+                  step="0.5"
+                  inputmode="decimal"
+                  formControlName="weight"
+                  required
+                  [attr.aria-invalid]="controlIsInvalid(exerciseGroup.controls.weight)"
+                  [attr.aria-describedby]="controlIsInvalid(exerciseGroup.controls.weight) ? 'exercise-weight-error-' + i : null"
+                  >
+                @if (controlIsInvalid(exerciseGroup.controls.weight)) {
+                  <small [id]="'exercise-weight-error-' + i" class="field-error">
+                    Enter a weight from 0 to 999,999.99 lb.
+                  </small>
+                }
+              </label>
+              <label class="field exercise-notes">
+                <span>Notes</span>
+                <input
+                  type="text"
+                  formControlName="notes"
+                  maxlength="500"
+                  placeholder="Optional"
+                  [attr.aria-invalid]="controlIsInvalid(exerciseGroup.controls.notes)"
+                  [attr.aria-describedby]="controlIsInvalid(exerciseGroup.controls.notes) ? 'exercise-notes-error-' + i : null"
+                  >
+                @if (controlHasError(exerciseGroup.controls.notes, 'maxlength')) {
+                  <small [id]="'exercise-notes-error-' + i" class="field-error">
+                    Notes must be 500 characters or less.
+                  </small>
+                }
+              </label>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+    <div class="sticky-actions">
+      <a class="btn secondary" routerLink="/workouts">Cancel</a>
+      <button class="btn primary" type="submit" [disabled]="saving">
+        <svg lucideSave size="18"></svg>
+        <span>{{ saving ? 'Saving...' : 'Save workout' }}</span>
       </button>
     </div>
-
-    <div formArrayName="exercises" class="exercise-stack">
-      <article class="exercise-editor" *ngFor="let exerciseGroup of exercises.controls; let i = index" [formGroupName]="i">
-        <div class="exercise-editor-head">
-          <h3>Exercise {{ i + 1 }}</h3>
-          <button
-            class="icon-btn danger"
-            type="button"
-            aria-label="Remove exercise"
-            [disabled]="exercises.length === 1"
-            (click)="removeExercise(i)"
-          >
-            <svg lucideIcon="trash-2" size="18"></svg>
-          </button>
-        </div>
-
-        <div class="exercise-fields">
-          <label class="field exercise-name">
-            <span>Name</span>
-            <input type="text" formControlName="exerciseName" placeholder="Bench press">
-            <small class="field-error" *ngIf="controlHasError(exerciseGroup.get('exerciseName'), 'required')">
-              Exercise name is required.
-            </small>
-            <small class="field-error" *ngIf="controlHasError(exerciseGroup.get('exerciseName'), 'maxlength')">
-              Use 120 characters or less.
-            </small>
-          </label>
-
-          <label class="field">
-            <span>Sets</span>
-            <input type="number" min="1" formControlName="sets">
-            <small class="field-error" *ngIf="controlHasError(exerciseGroup.get('sets'), 'min')">
-              Sets must be at least 1.
-            </small>
-          </label>
-
-          <label class="field">
-            <span>Reps</span>
-            <input type="number" min="1" formControlName="reps">
-            <small class="field-error" *ngIf="controlHasError(exerciseGroup.get('reps'), 'min')">
-              Reps must be at least 1.
-            </small>
-          </label>
-
-          <label class="field">
-            <span>Weight</span>
-            <input type="number" min="0" step="0.5" formControlName="weight">
-            <small class="field-error" *ngIf="controlHasError(exerciseGroup.get('weight'), 'min')">
-              Weight cannot be negative.
-            </small>
-          </label>
-
-          <label class="field exercise-notes">
-            <span>Notes</span>
-            <input type="text" formControlName="notes" placeholder="Optional">
-            <small class="field-error" *ngIf="controlHasError(exerciseGroup.get('notes'), 'maxlength')">
-              Notes must be 500 characters or less.
-            </small>
-          </label>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <div class="sticky-actions">
-    <a class="btn secondary" routerLink="/workouts">Cancel</a>
-    <button class="btn primary" type="submit" [disabled]="saving">
-      <svg lucideIcon="save" size="18"></svg>
-      <span>{{ saving ? 'Saving...' : 'Save workout' }}</span>
-    </button>
-  </div>
-</form>
+  </form>
+}

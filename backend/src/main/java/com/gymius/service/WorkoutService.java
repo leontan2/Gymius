@@ -45,13 +45,15 @@ public class WorkoutService {
         Workout workout = new Workout();
         workout.setUser(user);
         applyRequest(workout, request);
-        return workoutMapper.toDto(workoutRepository.save(workout));
+        return workoutMapper.toDto(workoutRepository.saveAndFlush(workout));
     }
 
     @Transactional
     public WorkoutDto update(UserAccount user, UUID workoutId, WorkoutRequest request) {
         Workout workout = findOwnedWorkout(user, workoutId);
         applyRequest(workout, request);
+        workout.touch();
+        workoutRepository.flush();
         return workoutMapper.toDto(workout);
     }
 
@@ -66,6 +68,8 @@ public class WorkoutService {
         Workout workout = findOwnedWorkout(user, workoutId);
         ExerciseLog exercise = toExercise(request, workout.getExercises().size());
         workout.addExercise(exercise);
+        workout.touch();
+        workoutRepository.flush();
         return workoutMapper.toDto(exercise);
     }
 
@@ -74,6 +78,8 @@ public class WorkoutService {
         Workout workout = findOwnedWorkout(user, workoutId);
         ExerciseLog exercise = findExercise(workout, exerciseId);
         applyExerciseRequest(exercise, request, exercise.getSortOrder());
+        workout.touch();
+        workoutRepository.flush();
         return workoutMapper.toDto(exercise);
     }
 
@@ -82,6 +88,8 @@ public class WorkoutService {
         Workout workout = findOwnedWorkout(user, workoutId);
         ExerciseLog exercise = findExercise(workout, exerciseId);
         workout.getExercises().remove(exercise);
+        workout.touch();
+        workoutRepository.flush();
     }
 
     private Workout findOwnedWorkout(UserAccount user, UUID workoutId) {

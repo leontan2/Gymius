@@ -42,10 +42,9 @@ public class NutritionController {
 
     @PostMapping("/analyze-image")
     public MealAnalysisDto analyzeImage(
-            @AuthenticationPrincipal OidcUser oidcUser,
             @RequestParam("image") MultipartFile image
     ) {
-        return nutritionService.analyzeMealImage(currentUser(oidcUser), image);
+        return nutritionService.analyzeMealImage(image);
     }
 
     @PostMapping("/entries")

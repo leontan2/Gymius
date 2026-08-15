@@ -7,6 +7,7 @@ public record DashboardDto(
         List<WorkoutSummaryDto> recentWorkouts,
         long weeklyWorkoutCount,
         long totalWorkouts,
-        BigDecimal totalVolumeLifted
+        BigDecimal totalVolumeLifted,
+        DashboardInsightDto insight
 ) {
 }

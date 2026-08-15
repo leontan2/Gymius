@@ -6,33 +6,45 @@
   </div>
 </section>
 
-<div class="loading-state" *ngIf="loading">Loading records...</div>
-<div class="error-state" *ngIf="error">{{ error }}</div>
+@if (loading) {
+  <div class="loading-state" role="status" aria-live="polite">Loading records...</div>
+}
+@if (error) {
+  <div class="error-state" role="alert">
+    <span>{{ error }}</span>
+    <button class="btn secondary" type="button" (click)="loadRecords()">Retry</button>
+  </div>
+}
 
-<div class="empty-state" *ngIf="!loading && !records.length">
-  <h3>No records yet</h3>
-  <p>Records appear automatically once exercises are logged.</p>
-  <a class="btn primary" routerLink="/workouts/new">Log workout</a>
-</div>
+@if (!loading && !error && !records.length) {
+  <div class="empty-state">
+    <h3>No records yet</h3>
+    <p>Records appear automatically once exercises are logged.</p>
+    <a class="btn primary" routerLink="/workouts/new">Log workout</a>
+  </div>
+}
 
-<section class="record-grid" *ngIf="records.length">
-  <article class="record-card" *ngFor="let record of records">
-    <div class="record-card-head">
-      <span class="metric-icon amber"><svg lucideIcon="trophy" size="20"></svg></span>
-      <h2>{{ record.exerciseName }}</h2>
-    </div>
-
-    <div class="record-splits">
-      <div>
-        <small><svg lucideIcon="weight" size="15"></svg> Heaviest</small>
-        <strong>{{ record.highestWeight | number: '1.0-2' }} lb</strong>
-        <span>{{ record.repsAtHighestWeight }} reps on {{ record.highestWeightDate | date: 'MMM d, y' }}</span>
-      </div>
-      <div>
-        <small><svg lucideIcon="repeat-2" size="15"></svg> Most reps</small>
-        <strong>{{ record.highestReps }}</strong>
-        <span>{{ record.weightAtHighestReps | number: '1.0-2' }} lb on {{ record.highestRepsDate | date: 'MMM d, y' }}</span>
-      </div>
-    </div>
-  </article>
-</section>
+@if (records.length) {
+  <section class="record-grid">
+    @for (record of records; track trackRecord($index, record)) {
+      <article class="record-card">
+        <div class="record-card-head">
+          <span class="metric-icon amber"><svg lucideTrophy size="20"></svg></span>
+          <h2>{{ record.exerciseName }}</h2>
+        </div>
+        <div class="record-splits">
+          <div>
+            <small><svg lucideWeight size="15"></svg> Heaviest</small>
+            <strong>{{ record.highestWeight | number: '1.0-2' }} lb</strong>
+            <span>{{ record.repsAtHighestWeight }} reps on {{ record.highestWeightDate | date: 'MMM d, y' }}</span>
+          </div>
+          <div>
+            <small><svg lucideRepeat2 size="15"></svg> Most reps</small>
+            <strong>{{ record.highestReps }}</strong>
+            <span>{{ record.weightAtHighestReps | number: '1.0-2' }} lb on {{ record.highestRepsDate | date: 'MMM d, y' }}</span>
+          </div>
+        </div>
+      </article>
+    }
+  </section>
+}

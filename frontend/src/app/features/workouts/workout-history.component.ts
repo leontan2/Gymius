@@ -1,82 +1,97 @@
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   LucideCalendarDays,
   LucideDumbbell,
-  LucideDynamicIcon,
   LucidePencil,
   LucidePlus,
   LucideSearch,
-  LucideTrash2,
-  provideLucideIcons
+  LucideTrash2
 } from '@lucide/angular';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
-import { Workout } from '../../core/models';
+import { apiErrorMessage } from '../../core/http-error';
+import { ExerciseLog, Workout } from '../../core/models';
 
 @Component({
   selector: 'app-workout-history',
   standalone: true,
   imports: [
-    CommonModule,
     DatePipe,
     DecimalPipe,
     RouterLink,
-    LucideDynamicIcon
+    LucideCalendarDays,
+    LucideDumbbell,
+    LucidePencil,
+    LucidePlus,
+    LucideSearch,
+    LucideTrash2
   ],
-  providers: [
-    provideLucideIcons(
-      LucideCalendarDays,
-      LucideDumbbell,
-      LucidePencil,
-      LucidePlus,
-      LucideSearch,
-      LucideTrash2
-    )
-  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workout-history.component.html'
 })
 export class WorkoutHistoryComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   workouts: Workout[] = [];
+  filteredWorkouts: Workout[] = [];
   query = '';
   loading = true;
   error = '';
+  deletingWorkoutId: string | null = null;
 
   ngOnInit(): void {
     this.loadWorkouts();
   }
 
-  get filteredWorkouts(): Workout[] {
+  updateQuery(event: Event): void {
+    this.query = (event.target as HTMLInputElement).value;
+    this.applyFilter();
+  }
+
+  clearSearch(): void {
+    this.query = '';
+    this.applyFilter();
+  }
+
+  private applyFilter(): void {
     const term = this.query.trim().toLowerCase();
     if (!term) {
-      return this.workouts;
+      this.filteredWorkouts = this.workouts;
+      return;
     }
 
-    return this.workouts.filter((workout) =>
+    this.filteredWorkouts = this.workouts.filter((workout) =>
       workout.workoutDate.includes(term)
       || workout.exercises.some((exercise) => exercise.exerciseName.toLowerCase().includes(term))
       || (workout.notes ?? '').toLowerCase().includes(term)
     );
   }
 
-  updateQuery(event: Event): void {
-    this.query = (event.target as HTMLInputElement).value;
-  }
-
   deleteWorkout(workout: Workout): void {
+    if (this.deletingWorkoutId !== null) {
+      return;
+    }
+
     const confirmed = window.confirm(`Delete workout from ${workout.workoutDate}?`);
     if (!confirmed) {
       return;
     }
 
-    this.api.deleteWorkout(workout.id).subscribe({
+    this.error = '';
+    this.deletingWorkoutId = workout.id;
+    this.api.deleteWorkout(workout.id).pipe(finalize(() => {
+      this.deletingWorkoutId = null;
+      this.changeDetector.markForCheck();
+    })).subscribe({
       next: () => {
         this.workouts = this.workouts.filter((item) => item.id !== workout.id);
+        this.applyFilter();
       },
-      error: () => {
-        this.error = 'Workout could not be deleted.';
+      error: (error: unknown) => {
+        this.error = apiErrorMessage(error, 'Workout could not be deleted.');
       }
     });
   }
@@ -85,15 +100,23 @@ export class WorkoutHistoryComponent implements OnInit {
     return workout.id;
   }
 
-  private loadWorkouts(): void {
-    this.api.workouts().subscribe({
+  trackExercise(index: number, exercise: ExerciseLog): string {
+    return exercise.id ?? `${exercise.exerciseName}-${index}`;
+  }
+
+  loadWorkouts(): void {
+    this.loading = true;
+    this.error = '';
+    this.api.workouts().pipe(finalize(() => {
+      this.loading = false;
+      this.changeDetector.markForCheck();
+    })).subscribe({
       next: (workouts) => {
         this.workouts = workouts;
-        this.loading = false;
+        this.applyFilter();
       },
-      error: () => {
-        this.error = 'Workout history could not be loaded.';
-        this.loading = false;
+      error: (error: unknown) => {
+        this.error = apiErrorMessage(error, 'Workout history could not be loaded.');
       }
     });
   }

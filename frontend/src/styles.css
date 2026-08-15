@@ -48,7 +48,7 @@ body {
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background:
     radial-gradient(circle at top left, rgba(61, 220, 151, 0.18), transparent 34rem),
     linear-gradient(135deg, var(--bg) 0%, #0a1715 52%, #111213 100%);
@@ -75,11 +75,57 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:disabled {
   cursor: not-allowed;
   opacity: 0.58;
+}
+
+textarea {
+  resize: vertical;
+}
+
+::placeholder {
+  color: var(--faint);
+  opacity: 1;
+}
+
+:where(a, button, input, textarea):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.skip-link {
+  background: var(--accent);
+  border-radius: 8px;
+  color: #04120e;
+  font-weight: 800;
+  left: 1rem;
+  padding: 0.75rem 1rem;
+  position: fixed;
+  top: 1rem;
+  transform: translateY(-160%);
+  transition: transform 160ms ease;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }
 
 svg[lucideIcon] {
@@ -97,7 +143,7 @@ svg[lucideIcon] {
   font-weight: 700;
   gap: 0.55rem;
   justify-content: center;
-  min-height: 42px;
+  min-height: 44px;
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
@@ -126,9 +172,9 @@ svg[lucideIcon] {
   background: var(--surface-2);
   border-color: var(--border);
   color: var(--text);
-  height: 42px;
+  height: 44px;
   padding: 0;
-  width: 42px;
+  width: 44px;
 }
 
 .icon-text-btn {
@@ -150,6 +196,10 @@ svg[lucideIcon] {
   min-height: 100vh;
 }
 
+body.nav-lock {
+  overflow: hidden;
+}
+
 .sidebar {
   background: rgba(8, 20, 18, 0.86);
   border-right: 1px solid var(--border);
@@ -161,6 +211,7 @@ svg[lucideIcon] {
   padding: 1.2rem;
   position: sticky;
   top: 0;
+  overflow-y: auto;
 }
 
 :root[data-theme='light'] .sidebar {
@@ -229,6 +280,14 @@ svg[lucideIcon] {
   display: grid;
   gap: 0.4rem;
   margin-top: auto;
+}
+
+.sidebar-error {
+  color: #ffb4b4;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0 0.65rem;
 }
 
 .user-chip {
@@ -331,6 +390,8 @@ svg[lucideIcon] {
 }
 
 .metric-card,
+.insight-focus,
+.insight-card,
 .history-card,
 .record-card,
 .form-panel,
@@ -344,6 +405,8 @@ svg[lucideIcon] {
 }
 
 :root[data-theme='light'] .metric-card,
+:root[data-theme='light'] .insight-focus,
+:root[data-theme='light'] .insight-card,
 :root[data-theme='light'] .history-card,
 :root[data-theme='light'] .record-card,
 :root[data-theme='light'] .form-panel,
@@ -361,9 +424,14 @@ svg[lucideIcon] {
 }
 
 .metric-card small,
+.metric-label,
 .metric-card span,
 .record-splits span {
   color: var(--muted);
+}
+
+.metric-label {
+  font-size: 0.83rem;
 }
 
 .metric-card strong {
@@ -415,6 +483,74 @@ svg[lucideIcon] {
 .profile-panel {
   margin: 0 auto 1.4rem;
   max-width: 1180px;
+}
+
+.insight-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 0.82fr));
+}
+
+.insight-focus,
+.insight-card {
+  min-height: 176px;
+  padding: 1rem;
+}
+
+.insight-focus {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.insight-copy h3 {
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  line-height: 1.08;
+  margin: 0;
+}
+
+.insight-copy p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0.55rem 0 0;
+}
+
+.goal-progress {
+  background: var(--surface-2);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.goal-progress span {
+  background: linear-gradient(90deg, var(--accent), var(--amber));
+  display: block;
+  height: 100%;
+}
+
+.insight-meta {
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  font-weight: 800;
+  gap: 0.55rem 1rem;
+}
+
+.insight-card {
+  align-content: start;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.insight-card small,
+.insight-card span {
+  color: var(--muted);
+}
+
+.insight-card strong {
+  font-size: clamp(1.45rem, 2vw, 2.1rem);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
 }
 
 .section-heading,
@@ -840,6 +976,13 @@ svg[lucideIcon] {
   line-height: 1.5;
 }
 
+.scanner-helper {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0.8rem 0 0;
+}
+
 .scanner-loading {
   align-items: center;
   display: flex;
@@ -925,6 +1068,44 @@ svg[lucideIcon] {
   justify-self: flex-start;
 }
 
+.progress-summary {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.progress-summary li {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0.7rem;
+}
+
+.progress-summary span {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-summary strong {
+  white-space: nowrap;
+}
+
+.progress-summary li > small {
+  color: var(--muted);
+  grid-column: 1 / -1;
+}
+
 .success-state {
   background: rgba(61, 220, 151, 0.12);
   border: 1px solid rgba(61, 220, 151, 0.28);
@@ -974,11 +1155,27 @@ svg[lucideIcon] {
   padding-inline: 1.2rem;
 }
 
+.login-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.login-actions .login-btn {
+  justify-self: auto;
+}
+
 .scope-note {
   align-items: center;
   color: var(--muted);
   display: inline-flex;
   gap: 0.5rem;
+}
+
+.login-error {
+  margin: 0;
+  max-width: 620px;
 }
 
 .login-visual {
@@ -1124,13 +1321,27 @@ svg[lucideIcon] {
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.28);
   color: #ffb4b4;
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.error-state .btn {
+  flex: 0 0 auto;
 }
 
 @media (max-width: 1120px) {
   .metrics-grid,
+  .insight-grid,
   .history-grid,
   .record-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .insight-focus {
+    grid-column: span 2;
   }
 
   .exercise-fields {
@@ -1175,6 +1386,7 @@ svg[lucideIcon] {
     transition: transform 180ms ease;
     width: 86vw;
     z-index: 40;
+    padding-bottom: max(1.2rem, env(safe-area-inset-bottom));
   }
 
   .app-shell.nav-open .sidebar {
@@ -1197,7 +1409,7 @@ svg[lucideIcon] {
   }
 
   .content-shell {
-    padding: 1rem;
+    padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
   }
 
   .page-header,
@@ -1231,12 +1443,17 @@ svg[lucideIcon] {
 @media (max-width: 680px) {
   .metrics-grid,
   .metrics-grid.two-up,
+  .insight-grid,
   .history-grid,
   .record-grid,
   .form-grid,
   .record-splits,
   .exercise-fields {
     grid-template-columns: 1fr;
+  }
+
+  .insight-focus {
+    grid-column: auto;
   }
 
   .exercise-name,
@@ -1273,7 +1490,8 @@ svg[lucideIcon] {
 
   .scanner-actions .btn,
   .confirm-form .btn,
-  .target-editor .btn {
+  .target-editor .btn,
+  .login-actions .btn {
     width: 100%;
   }
 
@@ -1281,7 +1499,34 @@ svg[lucideIcon] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .progress-summary {
+    grid-template-columns: 1fr;
+  }
+
   .phone-frame {
     min-height: 470px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@supports (min-height: 100dvh) {
+  .app-shell,
+  .sidebar,
+  .login-page {
+    min-height: 100dvh;
+  }
+
+  .sidebar {
+    height: 100dvh;
   }
 }

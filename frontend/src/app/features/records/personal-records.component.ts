@@ -1,52 +1,55 @@
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  LucideDynamicIcon,
-  LucideRepeat2,
-  LucideTrophy,
-  LucideWeight,
-  provideLucideIcons
-} from '@lucide/angular';
+import { LucideRepeat2, LucideTrophy, LucideWeight } from '@lucide/angular';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { apiErrorMessage } from '../../core/http-error';
 import { PersonalRecord } from '../../core/models';
 
 @Component({
   selector: 'app-personal-records',
   standalone: true,
   imports: [
-    CommonModule,
     DatePipe,
     DecimalPipe,
     RouterLink,
-    LucideDynamicIcon
+    LucideRepeat2,
+    LucideTrophy,
+    LucideWeight
   ],
-  providers: [
-    provideLucideIcons(
-      LucideRepeat2,
-      LucideTrophy,
-      LucideWeight
-    )
-  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './personal-records.component.html'
 })
 export class PersonalRecordsComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   records: PersonalRecord[] = [];
   loading = true;
   error = '';
 
   ngOnInit(): void {
-    this.api.personalRecords().subscribe({
+    this.loadRecords();
+  }
+
+  loadRecords(): void {
+    this.loading = true;
+    this.error = '';
+    this.api.personalRecords().pipe(finalize(() => {
+      this.loading = false;
+      this.changeDetector.markForCheck();
+    })).subscribe({
       next: (records) => {
         this.records = records;
-        this.loading = false;
       },
-      error: () => {
-        this.error = 'Personal records could not be loaded.';
-        this.loading = false;
+      error: (error: unknown) => {
+        this.error = apiErrorMessage(error, 'Personal records could not be loaded.');
       }
     });
+  }
+
+  trackRecord(_index: number, record: PersonalRecord): string {
+    return record.exerciseName;
   }
 }

@@ -1,44 +1,70 @@
-import { CommonModule, DecimalPipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
-import { Chart, ChartData, ChartOptions, registerables } from 'chart.js';
+import { DecimalPipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  effect,
+  inject
+} from '@angular/core';
+import {
+  CategoryScale,
+  Chart,
+  ChartData,
+  ChartOptions,
+  Legend,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+  Tooltip
+} from 'chart.js';
+import { finalize } from 'rxjs';
 import {
   LucideActivity,
   LucideBarChart3,
-  LucideDynamicIcon,
-  LucideTrendingUp,
-  provideLucideIcons
+  LucideTrendingUp
 } from '@lucide/angular';
 import { ApiService } from '../../core/api.service';
-import { ProgressSeries } from '../../core/models';
+import { apiErrorMessage } from '../../core/http-error';
+import { ProgressPoint, ProgressSeries } from '../../core/models';
+import { ThemeService } from '../../core/theme.service';
 
-Chart.register(...registerables);
+Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointElement, Tooltip, Legend);
 
 @Component({
   selector: 'app-progress',
   standalone: true,
   imports: [
-    CommonModule,
     DecimalPipe,
-    LucideDynamicIcon
+    LucideActivity,
+    LucideBarChart3,
+    LucideTrendingUp
   ],
-  providers: [
-    provideLucideIcons(
-      LucideActivity,
-      LucideBarChart3,
-      LucideTrendingUp
-    )
-  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './progress.component.html'
 })
-export class ProgressComponent implements OnInit, AfterViewInit, OnDestroy {
+export class ProgressComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly theme = inject(ThemeService);
   private readonly colors = ['#3ddc97', '#f9b233', '#4cc9f0', '#f15bb5', '#a78bfa', '#ef4444'];
   private chart?: Chart<'line'>;
-  private viewReady = false;
+  private progressCanvas?: ElementRef<HTMLCanvasElement>;
 
-  @ViewChild('progressCanvas') private progressCanvas?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('progressCanvas')
+  set progressCanvasRef(element: ElementRef<HTMLCanvasElement> | undefined) {
+    this.progressCanvas = element;
+    if (element) {
+      queueMicrotask(() => this.renderChart());
+    }
+  }
 
   series: ProgressSeries[] = [];
+  displayedSeries: ProgressSeries[] = [];
   loading = true;
   error = '';
 
@@ -47,57 +73,34 @@ export class ProgressComponent implements OnInit, AfterViewInit, OnDestroy {
     datasets: []
   };
 
-  chartOptions: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false
-    },
-    plugins: {
-      legend: {
-        labels: {
-          color: '#a8b5b0',
-          boxWidth: 10,
-          usePointStyle: true
-        }
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => `${context.dataset.label}: ${context.parsed.y} lb`
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: '#a8b5b0' },
-        grid: { color: 'rgba(168, 181, 176, 0.12)' }
-      },
-      y: {
-        ticks: { color: '#a8b5b0' },
-        grid: { color: 'rgba(168, 181, 176, 0.12)' }
-      }
+  private readonly updateChartForTheme = effect(() => {
+    this.theme.theme();
+    if (this.chart) {
+      this.chart.options = this.buildChartOptions();
+      this.chart.update('none');
     }
-  };
+  });
 
   ngOnInit(): void {
-    this.api.progress().subscribe({
+    this.loadProgress();
+  }
+
+  loadProgress(): void {
+    this.loading = true;
+    this.error = '';
+    this.api.progress().pipe(finalize(() => {
+      this.loading = false;
+      this.changeDetector.markForCheck();
+    })).subscribe({
       next: (series) => {
         this.series = series;
         this.chartData = this.buildChartData(series);
         this.renderChart();
-        this.loading = false;
       },
-      error: () => {
-        this.error = 'Progress data could not be loaded.';
-        this.loading = false;
+      error: (error: unknown) => {
+        this.error = apiErrorMessage(error, 'Progress data could not be loaded.');
       }
     });
-  }
-
-  ngAfterViewInit(): void {
-    this.viewReady = true;
-    this.renderChart();
   }
 
   ngOnDestroy(): void {
@@ -114,20 +117,43 @@ export class ProgressComponent implements OnInit, AfterViewInit, OnDestroy {
       .reduce((highest, point) => Math.max(highest, Number(point.maxWeight)), 0);
   }
 
+  latestPoint(item: ProgressSeries): ProgressPoint | undefined {
+    return item.points.at(-1);
+  }
+
+  firstPoint(item: ProgressSeries): ProgressPoint | undefined {
+    return item.points[0];
+  }
+
+  weightChange(item: ProgressSeries): number {
+    const first = this.firstPoint(item);
+    const latest = this.latestPoint(item);
+    return first && latest ? Number(latest.maxWeight) - Number(first.maxWeight) : 0;
+  }
+
+  trackSeries(_index: number, item: ProgressSeries): string {
+    return item.exerciseName;
+  }
+
   private buildChartData(series: ProgressSeries[]): ChartData<'line'> {
     const selected = series
       .filter((item) => item.points.length > 0)
       .sort((a, b) => b.points.length - a.points.length)
       .slice(0, 6);
+    this.displayedSeries = selected;
 
     const labels = Array.from(new Set(selected.flatMap((item) => item.points.map((point) => point.date))))
       .sort();
+
+    const weightsByDate = selected.map((item) => new Map(
+      item.points.map((point) => [point.date, point.maxWeight])
+    ));
 
     return {
       labels,
       datasets: selected.map((item, index) => ({
         label: item.exerciseName,
-        data: labels.map((label) => item.points.find((point) => point.date === label)?.maxWeight ?? null),
+        data: labels.map((label) => weightsByDate[index].get(label) ?? null),
         borderColor: this.colors[index % this.colors.length],
         backgroundColor: this.colors[index % this.colors.length],
         borderWidth: 3,
@@ -140,7 +166,7 @@ export class ProgressComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private renderChart(): void {
-    if (!this.viewReady || !this.progressCanvas || !this.chartData.datasets.length) {
+    if (!this.progressCanvas || !this.chartData.datasets.length) {
       return;
     }
 
@@ -148,7 +174,46 @@ export class ProgressComponent implements OnInit, AfterViewInit, OnDestroy {
     this.chart = new Chart(this.progressCanvas.nativeElement, {
       type: 'line',
       data: this.chartData,
-      options: this.chartOptions
+      options: this.buildChartOptions()
     });
+  }
+
+  private buildChartOptions(): ChartOptions<'line'> {
+    const styles = getComputedStyle(document.documentElement);
+    const muted = styles.getPropertyValue('--muted').trim() || '#a8b5b0';
+    const grid = styles.getPropertyValue('--border').trim() || 'rgba(168, 181, 176, 0.14)';
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          labels: {
+            color: muted,
+            boxWidth: 10,
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.dataset.label}: ${context.parsed.y} lb`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: muted },
+          grid: { color: grid }
+        },
+        y: {
+          ticks: { color: muted },
+          grid: { color: grid }
+        }
+      }
+    };
   }
 }

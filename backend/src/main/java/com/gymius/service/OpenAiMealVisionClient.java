@@ -5,20 +5,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymius.dto.MealAnalysisDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 @Component
 public class OpenAiMealVisionClient implements MealVisionClient {
@@ -29,17 +33,35 @@ public class OpenAiMealVisionClient implements MealVisionClient {
     private final String apiKey;
     private final String model;
     private final String imageDetail;
+    private final RestClient restClient;
+    private final Semaphore analysisPermits;
 
     public OpenAiMealVisionClient(
             ObjectMapper objectMapper,
             @Value("${app.openai.api-key:}") String apiKey,
             @Value("${app.openai.model:gpt-5-mini}") String model,
-            @Value("${app.openai.image-detail:auto}") String imageDetail
+            @Value("${app.openai.image-detail:auto}") String imageDetail,
+            @Value("${app.openai.connect-timeout:10s}") Duration connectTimeout,
+            @Value("${app.openai.read-timeout:45s}") Duration readTimeout,
+            @Value("${app.openai.max-concurrent-analyses:4}") int maxConcurrentAnalyses
     ) {
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
         this.model = model;
         this.imageDetail = imageDetail;
+        this.analysisPermits = new Semaphore(Math.max(1, maxConcurrentAnalyses));
+
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(connectTimeout)
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(readTimeout);
+        this.restClient = RestClient.builder()
+                .baseUrl(OPENAI_RESPONSES_URL)
+                .requestFactory(requestFactory)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 
     @Override
@@ -48,17 +70,29 @@ public class OpenAiMealVisionClient implements MealVisionClient {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "OpenAI API key is not configured.");
         }
 
+        if (!analysisPermits.tryAcquire()) {
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Meal analysis is busy. Please try again in a moment."
+            );
+        }
+
         try {
-            JsonNode response = RestClient.builder()
-                    .baseUrl(OPENAI_RESPONSES_URL)
-                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                    .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .build()
+            JsonNode response = restClient
                     .post()
                     .uri("/responses")
                     .body(requestBody(image))
                     .retrieve()
                     .body(JsonNode.class);
+
+            if (response == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "OpenAI returned no meal analysis response.");
+            }
+
+            String responseStatus = response.path("status").asText();
+            if (!responseStatus.isBlank() && !"completed".equals(responseStatus)) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "OpenAI did not complete the meal analysis.");
+            }
 
             String outputText = extractOutputText(response);
             if (outputText == null || outputText.isBlank()) {
@@ -70,6 +104,8 @@ public class OpenAiMealVisionClient implements MealVisionClient {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "OpenAI meal analysis failed.", exception);
         } catch (IOException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Meal analysis response could not be processed.", exception);
+        } finally {
+            analysisPermits.release();
         }
     }
 
@@ -87,6 +123,7 @@ public class OpenAiMealVisionClient implements MealVisionClient {
         return Map.of(
                 "model", model,
                 "store", false,
+                "max_output_tokens", 2000,
                 "instructions", instructions(),
                 "input", List.of(Map.of(
                         "role", "user",
@@ -128,19 +165,20 @@ public class OpenAiMealVisionClient implements MealVisionClient {
 
     private Map<String, Object> mealAnalysisSchema() {
         Map<String, Object> properties = new LinkedHashMap<>();
-        properties.put("estimatedCalories", Map.of("type", "integer"));
-        properties.put("calorieMin", Map.of("type", "integer"));
-        properties.put("calorieMax", Map.of("type", "integer"));
+        properties.put("estimatedCalories", boundedIntegerSchema());
+        properties.put("calorieMin", boundedIntegerSchema());
+        properties.put("calorieMax", boundedIntegerSchema());
         properties.put("confidence", Map.of("type", "string", "enum", List.of("LOW", "MEDIUM", "HIGH")));
         properties.put("foodItems", Map.of(
                 "type", "array",
+                "maxItems", 20,
                 "items", foodItemSchema()
         ));
-        properties.put("proteinGrams", Map.of("type", List.of("number", "null")));
-        properties.put("carbsGrams", Map.of("type", List.of("number", "null")));
-        properties.put("fatGrams", Map.of("type", List.of("number", "null")));
-        properties.put("confidenceNote", Map.of("type", "string"));
-        properties.put("userMessage", Map.of("type", "string"));
+        properties.put("proteinGrams", boundedNullableNumberSchema());
+        properties.put("carbsGrams", boundedNullableNumberSchema());
+        properties.put("fatGrams", boundedNullableNumberSchema());
+        properties.put("confidenceNote", Map.of("type", "string", "maxLength", 500));
+        properties.put("userMessage", Map.of("type", "string", "maxLength", 300));
 
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
@@ -152,9 +190,9 @@ public class OpenAiMealVisionClient implements MealVisionClient {
 
     private Map<String, Object> foodItemSchema() {
         Map<String, Object> properties = new LinkedHashMap<>();
-        properties.put("name", Map.of("type", "string"));
-        properties.put("portionEstimate", Map.of("type", "string"));
-        properties.put("estimatedCalories", Map.of("type", "integer"));
+        properties.put("name", Map.of("type", "string", "maxLength", 120));
+        properties.put("portionEstimate", Map.of("type", "string", "maxLength", 200));
+        properties.put("estimatedCalories", boundedIntegerSchema());
 
         Map<String, Object> schema = new LinkedHashMap<>();
         schema.put("type", "object");
@@ -162,6 +200,22 @@ public class OpenAiMealVisionClient implements MealVisionClient {
         schema.put("required", new ArrayList<>(properties.keySet()));
         schema.put("properties", properties);
         return schema;
+    }
+
+    private Map<String, Object> boundedIntegerSchema() {
+        return Map.of(
+                "type", "integer",
+                "minimum", 0,
+                "maximum", 10000
+        );
+    }
+
+    private Map<String, Object> boundedNullableNumberSchema() {
+        return Map.of(
+                "type", List.of("number", "null"),
+                "minimum", 0,
+                "maximum", 10000
+        );
     }
 
     private String extractOutputText(JsonNode response) {

@@ -16,6 +16,14 @@ export interface ExerciseLog {
   volume?: number;
 }
 
+export interface ExerciseLogRequest {
+  exerciseName: string;
+  sets: number;
+  reps: number;
+  weight: number;
+  notes: string | null;
+}
+
 export interface Workout {
   id: string;
   workoutDate: string;
@@ -29,7 +37,11 @@ export interface Workout {
 export interface WorkoutRequest {
   workoutDate: string;
   notes: string | null;
-  exercises: ExerciseLog[];
+  exercises: ExerciseLogRequest[];
+}
+
+export interface CsrfTokenResponse {
+  token: string;
 }
 
 export interface WorkoutSummary {
@@ -44,6 +56,20 @@ export interface Dashboard {
   weeklyWorkoutCount: number;
   totalWorkouts: number;
   totalVolumeLifted: number;
+  insight: DashboardInsight;
+}
+
+export interface DashboardInsight {
+  weeklyGoal: number;
+  weeklyProgressPercent: number;
+  workoutsRemaining: number;
+  trainingStreakWeeks: number;
+  daysSinceLastWorkout: number | null;
+  lastWorkoutDate: string | null;
+  topExerciseName: string | null;
+  topExerciseLogCount: number;
+  guidanceTitle: string;
+  guidanceBody: string;
 }
 
 export interface ProgressPoint {

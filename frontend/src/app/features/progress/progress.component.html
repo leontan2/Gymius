@@ -6,40 +6,76 @@
   </div>
 </section>
 
-<div class="loading-state" *ngIf="loading">Loading progress...</div>
-<div class="error-state" *ngIf="error">{{ error }}</div>
+@if (loading) {
+  <div class="loading-state" role="status" aria-live="polite">Loading progress...</div>
+}
+@if (error) {
+  <div class="error-state" role="alert">
+    <span>{{ error }}</span>
+    <button class="btn secondary" type="button" (click)="loadProgress()">Retry</button>
+  </div>
+}
 
-<ng-container *ngIf="!loading && !error">
+@if (!loading && !error) {
   <section class="metrics-grid two-up">
     <article class="metric-card">
-      <span class="metric-icon"><svg lucideIcon="activity" size="20"></svg></span>
+      <span class="metric-icon"><svg lucideActivity size="20"></svg></span>
       <small>Tracked exercises</small>
       <strong>{{ totalTrackedExercises }}</strong>
       <span>with logged data</span>
     </article>
     <article class="metric-card">
-      <span class="metric-icon amber"><svg lucideIcon="trending-up" size="20"></svg></span>
+      <span class="metric-icon amber"><svg lucideTrendingUp size="20"></svg></span>
       <small>Highest logged load</small>
       <strong>{{ strongestLatestLift | number: '1.0-0' }}</strong>
       <span>lb</span>
     </article>
   </section>
-
-  <section class="chart-panel" *ngIf="chartData.datasets.length">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Chart</p>
-        <h2>Top tracked lifts</h2>
+  @if (chartData.datasets.length) {
+    <section class="chart-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Chart</p>
+          <h2>Top tracked lifts</h2>
+        </div>
+        <span class="chart-chip"><svg lucideBarChart3 size="16"></svg> Max weight</span>
       </div>
-      <span class="chart-chip"><svg lucideIcon="bar-chart-3" size="16"></svg> Max weight</span>
+      <div class="chart-frame">
+        <canvas
+          #progressCanvas
+          role="img"
+          aria-label="Line chart of maximum logged weight over time for the six most frequently tracked exercises"
+          >
+          Maximum logged weight over time. A text summary follows the chart.
+        </canvas>
+      </div>
+      <ul class="progress-summary" aria-label="Progress trends shown in the chart">
+        @for (item of displayedSeries; track trackSeries($index, item)) {
+          <li>
+            <span>{{ item.exerciseName }}</span>
+            @if (firstPoint(item); as first) {
+              @if (latestPoint(item); as latest) {
+                <strong>
+                  {{ first.maxWeight | number: '1.0-2' }} → {{ latest.maxWeight | number: '1.0-2' }} lb
+                </strong>
+                <small>
+                  <time [attr.datetime]="first.date">{{ first.date }}</time>
+                  to
+                  <time [attr.datetime]="latest.date">{{ latest.date }}</time>
+                  · Change:
+                  {{ weightChange(item) > 0 ? '+' : '' }}{{ weightChange(item) | number: '1.0-2' }} lb
+                </small>
+              }
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+  @if (!chartData.datasets.length) {
+    <div class="empty-state">
+      <h3>No progress yet</h3>
+      <p>Add workouts with weighted exercises to see trends here.</p>
     </div>
-    <div class="chart-frame">
-      <canvas #progressCanvas></canvas>
-    </div>
-  </section>
-
-  <div class="empty-state" *ngIf="!chartData.datasets.length">
-    <h3>No progress yet</h3>
-    <p>Add workouts with weighted exercises to see trends here.</p>
-  </div>
-</ng-container>
+  }
+}

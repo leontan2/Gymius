@@ -1,6 +1,7 @@
 package com.gymius.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -14,12 +15,15 @@ public record NutritionGoalRequest(
         Integer dailyCalories,
 
         @DecimalMin(value = "0.0", message = "Protein goal cannot be negative.")
+        @Digits(integer = 6, fraction = 2, message = "Protein goal must be a valid number.")
         BigDecimal proteinGoalGrams,
 
         @DecimalMin(value = "0.0", message = "Carbs goal cannot be negative.")
+        @Digits(integer = 6, fraction = 2, message = "Carbs goal must be a valid number.")
         BigDecimal carbsGoalGrams,
 
         @DecimalMin(value = "0.0", message = "Fat goal cannot be negative.")
+        @Digits(integer = 6, fraction = 2, message = "Fat goal must be a valid number.")
         BigDecimal fatGoalGrams
 ) {
 }

@@ -5,42 +5,99 @@
     <p class="page-subtitle">Recent training, weekly consistency, and total volume at a glance.</p>
   </div>
   <a class="btn primary" routerLink="/workouts/new">
-    <svg lucideIcon="plus" size="18"></svg>
+    <svg lucidePlus size="18"></svg>
     <span>Start workout</span>
   </a>
 </section>
 
-<div class="loading-state" *ngIf="loading">Loading dashboard...</div>
-<div class="error-state" *ngIf="error">{{ error }}</div>
+@if (loading) {
+  <div class="loading-state" role="status" aria-live="polite">Loading dashboard...</div>
+}
+@if (error) {
+  <div class="error-state" role="alert">
+    <span>{{ error }}</span>
+    <button class="btn secondary" type="button" (click)="loadDashboard()">Retry</button>
+  </div>
+}
 
-<ng-container *ngIf="dashboard as data">
+@if (dashboard; as data) {
   <section class="metrics-grid">
     <article class="metric-card">
-      <span class="metric-icon"><svg lucideIcon="calendar-days" size="20"></svg></span>
+      <span class="metric-icon"><svg lucideCalendarDays size="20"></svg></span>
       <small>This week</small>
       <strong>{{ data.weeklyWorkoutCount }}</strong>
       <span>workouts logged</span>
     </article>
     <article class="metric-card">
-      <span class="metric-icon amber"><svg lucideIcon="scale" size="20"></svg></span>
+      <span class="metric-icon amber"><svg lucideScale size="20"></svg></span>
       <small>Total volume</small>
       <strong>{{ data.totalVolumeLifted | number: '1.0-0' }}</strong>
       <span>lb lifted</span>
     </article>
     <article class="metric-card">
-      <span class="metric-icon blue"><svg lucideIcon="dumbbell" size="20"></svg></span>
+      <span class="metric-icon blue"><svg lucideDumbbell size="20"></svg></span>
       <small>Lifetime</small>
       <strong>{{ data.totalWorkouts }}</strong>
       <span>workouts</span>
     </article>
     <article class="metric-card highlight">
-      <span class="metric-icon rose"><svg lucideIcon="trophy" size="20"></svg></span>
+      <span class="metric-icon rose"><svg lucideTrophy size="20"></svg></span>
       <small>Next move</small>
       <strong>Build</strong>
-      <a routerLink="/workouts/new">Log today's session <svg lucideIcon="arrow-up-right" size="16"></svg></a>
+      <a routerLink="/workouts/new">Log today's session <svg lucideArrowUpRight size="16"></svg></a>
     </article>
   </section>
-
+  <section class="section-block training-insights">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Training insights</p>
+        <h2>Weekly plan</h2>
+      </div>
+      <a class="text-link" routerLink="/progress">View progress</a>
+    </div>
+    <div class="insight-grid">
+      <article class="insight-focus">
+        <span class="metric-icon"><svg lucideTarget size="20"></svg></span>
+        <div class="insight-copy">
+          <h3>{{ data.insight.guidanceTitle }}</h3>
+          <p>{{ data.insight.guidanceBody }}</p>
+        </div>
+        <div
+          class="goal-progress"
+          role="progressbar"
+          aria-label="Weekly workout goal progress"
+          aria-valuemin="0"
+          [attr.aria-valuemax]="data.insight.weeklyGoal"
+          [attr.aria-valuenow]="clampedProgress(data.weeklyWorkoutCount, data.insight.weeklyGoal)"
+          [attr.aria-valuetext]="data.weeklyWorkoutCount + ' workouts of a ' + data.insight.weeklyGoal + ' workout goal'"
+          >
+          <span [style.width.%]="data.insight.weeklyProgressPercent"></span>
+        </div>
+        <div class="insight-meta">
+          <span>{{ data.weeklyWorkoutCount }} / {{ data.insight.weeklyGoal }} workouts this week</span>
+          <span>{{ workoutsRemainingLabel(data.insight) }}</span>
+        </div>
+      </article>
+      <article class="insight-card">
+        <span class="metric-icon rose"><svg lucideFlame size="20"></svg></span>
+        <small>Active streak</small>
+        <strong>{{ data.insight.trainingStreakWeeks }}</strong>
+        <span>{{ streakLabel(data.insight) }}</span>
+      </article>
+      <article class="insight-card">
+        <span class="metric-icon blue"><svg lucideClock size="20"></svg></span>
+        <small>Recovery</small>
+        <strong>{{ lastWorkoutValue(data.insight) }}</strong>
+        <span>{{ lastWorkoutLabel(data.insight) }}</span>
+      </article>
+      <article class="insight-card">
+        <span class="metric-icon amber"><svg lucideActivity size="20"></svg></span>
+        <small>30-day focus</small>
+        <strong>{{ data.insight.topExerciseName || 'None yet' }}</strong>
+        <span>{{ focusLabel(data.insight) }}</span>
+      </article>
+    </div>
+  </section>
   <section class="section-block">
     <div class="section-heading">
       <div>
@@ -49,21 +106,28 @@
       </div>
       <a class="text-link" routerLink="/workouts">View history</a>
     </div>
-
-    <div class="empty-state" *ngIf="!data.recentWorkouts.length">
-      <h3>No workouts yet</h3>
-      <p>Your first logged workout will appear here.</p>
-      <a class="btn primary" routerLink="/workouts/new">Start workout</a>
-    </div>
-
-    <div class="workout-list compact" *ngIf="data.recentWorkouts.length">
-      <a class="workout-row" *ngFor="let workout of data.recentWorkouts" [routerLink]="['/workouts', workout.id, 'edit']">
-        <span>
-          <strong>{{ workout.workoutDate | date: 'MMM d, y' }}</strong>
-          <small>{{ workout.exerciseCount }} exercises</small>
-        </span>
-        <span class="row-metric">{{ workout.totalVolume | number: '1.0-0' }} lb</span>
-      </a>
-    </div>
+    @if (!data.recentWorkouts.length) {
+      <div class="empty-state">
+        <h3>No workouts yet</h3>
+        <p>Your first logged workout will appear here.</p>
+        <a class="btn primary" routerLink="/workouts/new">Start workout</a>
+      </div>
+    }
+    @if (data.recentWorkouts.length) {
+      <div class="workout-list compact">
+        @for (workout of data.recentWorkouts; track trackWorkout($index, workout)) {
+          <a
+            class="workout-row"
+            [routerLink]="['/workouts', workout.id, 'edit']"
+            >
+            <span>
+              <strong>{{ workout.workoutDate | date: 'MMM d, y' }}</strong>
+              <small>{{ workout.exerciseCount }} exercises</small>
+            </span>
+            <span class="row-metric">{{ workout.totalVolume | number: '1.0-0' }} lb</span>
+          </a>
+        }
+      </div>
+    }
   </section>
-</ng-container>
+}

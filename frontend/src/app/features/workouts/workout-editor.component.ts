@@ -1,62 +1,71 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import {
   AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  NonNullableFormBuilder,
   ReactiveFormsModule,
-  UntypedFormArray,
-  UntypedFormBuilder,
-  UntypedFormGroup,
+  ValidationErrors,
+  ValidatorFn,
   Validators
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   LucideCalendarDays,
-  LucideDynamicIcon,
   LucidePlus,
   LucideSave,
   LucideStickyNote,
-  LucideTrash2,
-  provideLucideIcons
+  LucideTrash2
 } from '@lucide/angular';
 import { ApiService } from '../../core/api.service';
-import { ExerciseLog, Workout, WorkoutRequest } from '../../core/models';
+import { toLocalDateInputValue } from '../../core/date.utils';
+import { apiErrorMessage } from '../../core/http-error';
+import { ExerciseLog, ExerciseLogRequest, Workout, WorkoutRequest } from '../../core/models';
+import { finalize } from 'rxjs';
+
+interface ExerciseFormControls {
+  exerciseName: FormControl<string>;
+  sets: FormControl<number>;
+  reps: FormControl<number>;
+  weight: FormControl<number>;
+  notes: FormControl<string>;
+}
 
 @Component({
   selector: 'app-workout-editor',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    LucideDynamicIcon
+    LucideCalendarDays,
+    LucidePlus,
+    LucideSave,
+    LucideStickyNote,
+    LucideTrash2
   ],
-  providers: [
-    provideLucideIcons(
-      LucideCalendarDays,
-      LucidePlus,
-      LucideSave,
-      LucideStickyNote,
-      LucideTrash2
-    )
-  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workout-editor.component.html'
 })
 export class WorkoutEditorComponent implements OnInit {
   private readonly api = inject(ApiService);
-  private readonly fb = inject(UntypedFormBuilder);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly fb = inject(NonNullableFormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly maxDate = this.toDateInputValue(new Date());
+  readonly maxDate = toLocalDateInputValue(new Date());
+  readonly maxExercises = 200;
   readonly form = this.fb.group({
-    workoutDate: [this.maxDate, [Validators.required]],
+    workoutDate: [this.maxDate, [Validators.required, validWorkoutDate(this.maxDate)]],
     notes: ['', [Validators.maxLength(1000)]],
-    exercises: this.fb.array([])
+    exercises: this.fb.array<FormGroup<ExerciseFormControls>>([])
   });
 
   workoutId: string | null = null;
   loading = false;
   saving = false;
+  loadFailed = false;
   submitted = false;
   error = '';
 
@@ -64,17 +73,7 @@ export class WorkoutEditorComponent implements OnInit {
     this.workoutId = this.route.snapshot.paramMap.get('id');
 
     if (this.workoutId) {
-      this.loading = true;
-      this.api.workout(this.workoutId).subscribe({
-        next: (workout) => {
-          this.patchWorkout(workout);
-          this.loading = false;
-        },
-        error: () => {
-          this.error = 'Workout could not be loaded.';
-          this.loading = false;
-        }
-      });
+      this.loadWorkout();
       return;
     }
 
@@ -85,11 +84,15 @@ export class WorkoutEditorComponent implements OnInit {
     return Boolean(this.workoutId);
   }
 
-  get exercises(): UntypedFormArray {
-    return this.form.get('exercises') as UntypedFormArray;
+  get exercises(): FormArray<FormGroup<ExerciseFormControls>> {
+    return this.form.controls.exercises;
   }
 
   addExercise(exercise?: ExerciseLog): void {
+    if (this.exercises.length >= this.maxExercises) {
+      return;
+    }
+
     this.exercises.push(this.createExerciseGroup(exercise));
   }
 
@@ -112,18 +115,21 @@ export class WorkoutEditorComponent implements OnInit {
 
     const payload = this.toPayload();
     this.saving = true;
+    this.form.disable();
     const request = this.workoutId
       ? this.api.updateWorkout(this.workoutId, payload)
       : this.api.createWorkout(payload);
 
-    request.subscribe({
+    request.pipe(finalize(() => {
+      this.saving = false;
+      this.form.enable();
+      this.changeDetector.markForCheck();
+    })).subscribe({
       next: () => {
-        this.saving = false;
-        this.router.navigateByUrl('/workouts');
+        void this.router.navigateByUrl('/workouts');
       },
-      error: () => {
-        this.error = 'Workout could not be saved. Check the fields and try again.';
-        this.saving = false;
+      error: (error: unknown) => {
+        this.error = apiErrorMessage(error, 'Workout could not be saved. Check the fields and try again.');
       }
     });
   }
@@ -132,12 +138,47 @@ export class WorkoutEditorComponent implements OnInit {
     return Boolean(control?.hasError(error) && (control.touched || control.dirty || this.submitted));
   }
 
-  private createExerciseGroup(exercise?: ExerciseLog): UntypedFormGroup {
+  controlIsInvalid(control: AbstractControl | null): boolean {
+    return Boolean(control?.invalid && (control.touched || control.dirty || this.submitted));
+  }
+
+  loadWorkout(): void {
+    if (!this.workoutId) {
+      return;
+    }
+
+    this.loading = true;
+    this.loadFailed = false;
+    this.error = '';
+    this.api.workout(this.workoutId)
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.changeDetector.markForCheck();
+      }))
+      .subscribe({
+        next: (workout) => this.patchWorkout(workout),
+        error: (error: unknown) => {
+          this.loadFailed = true;
+          this.error = apiErrorMessage(error, 'Workout could not be loaded.');
+        }
+      });
+  }
+
+  trackExercise(_index: number, control: AbstractControl): AbstractControl {
+    return control;
+  }
+
+  private createExerciseGroup(exercise?: ExerciseLog): FormGroup<ExerciseFormControls> {
     return this.fb.group({
-      exerciseName: [exercise?.exerciseName ?? '', [Validators.required, Validators.maxLength(120)]],
+      exerciseName: [exercise?.exerciseName ?? '', [trimmedRequired(), Validators.maxLength(120)]],
       sets: [exercise?.sets ?? 3, [Validators.required, Validators.min(1), Validators.max(100)]],
       reps: [exercise?.reps ?? 8, [Validators.required, Validators.min(1), Validators.max(1000)]],
-      weight: [exercise?.weight ?? 0, [Validators.required, Validators.min(0)]],
+      weight: [exercise?.weight ?? 0, [
+        Validators.required,
+        Validators.min(0),
+        Validators.max(999999.99),
+        validWeightPrecision()
+      ]],
       notes: [exercise?.notes ?? '', [Validators.maxLength(500)]]
     });
   }
@@ -157,16 +198,12 @@ export class WorkoutEditorComponent implements OnInit {
   }
 
   private toPayload(): WorkoutRequest {
-    const raw = this.form.getRawValue() as {
-      workoutDate: string;
-      notes: string;
-      exercises: ExerciseLog[];
-    };
+    const raw = this.form.getRawValue();
 
     return {
       workoutDate: raw.workoutDate,
       notes: raw.notes?.trim() || null,
-      exercises: raw.exercises.map((exercise) => ({
+      exercises: raw.exercises.map((exercise): ExerciseLogRequest => ({
         exerciseName: exercise.exerciseName.trim(),
         sets: Number(exercise.sets),
         reps: Number(exercise.reps),
@@ -175,9 +212,37 @@ export class WorkoutEditorComponent implements OnInit {
       }))
     };
   }
+}
 
-  private toDateInputValue(date: Date): string {
-    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    return local.toISOString().slice(0, 10);
-  }
+function trimmedRequired(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    return typeof value === 'string' && value.trim().length > 0 ? null : { required: true };
+  };
+}
+
+function validWorkoutDate(maxDate: string): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return { invalidDate: true };
+    }
+
+    return value <= maxDate ? null : { futureDate: true };
+  };
+}
+
+function validWeightPrecision(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (value === null || value === '') {
+      return null;
+    }
+
+    return /^\d{1,6}(?:\.\d{1,2})?$/.test(String(value)) ? null : { precision: true };
+  };
 }

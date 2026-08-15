@@ -2,6 +2,10 @@ server:
   address: 0.0.0.0
   port: ${PORT:${SERVER_PORT:8080}}
   forward-headers-strategy: framework
+  compression:
+    enabled: true
+    min-response-size: 1KB
+    mime-types: application/json
   servlet:
     session:
       cookie:
@@ -28,11 +32,16 @@ spring:
         bootstrap-mode: ${SPRING_DATA_JPA_REPOSITORIES_BOOTSTRAP_MODE:default}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
     open-in-view: false
     properties:
       hibernate:
+        default_batch_fetch_size: 50
         format_sql: true
+  flyway:
+    baseline-on-migrate: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE:false}
+    clean-disabled: true
+    validate-migration-naming: true
   security:
     oauth2:
       client:
@@ -46,11 +55,17 @@ spring:
               - email
 
 app:
+  auth:
+    dev-bypass-enabled: ${DEV_AUTH_BYPASS_ENABLED:false}
+    dev-subject: ${DEV_AUTH_SUBJECT:local-dev-user}
+    dev-email: ${DEV_AUTH_EMAIL:local@gymius.dev}
+    dev-name: ${DEV_AUTH_NAME:Local Gymius User}
+    dev-picture: ${DEV_AUTH_PICTURE:}
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
   meal-vision:
-    provider: ${MEAL_VISION_PROVIDER:mock}
+    provider: ${MEAL_VISION_PROVIDER:openai}
     max-image-bytes: ${MEAL_IMAGE_MAX_BYTES:5242880}
   nutrition:
     default-daily-calories: ${DEFAULT_DAILY_CALORIES:2200}
@@ -58,6 +73,9 @@ app:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-5-mini}
     image-detail: ${OPENAI_IMAGE_DETAIL:auto}
+    connect-timeout: ${OPENAI_CONNECT_TIMEOUT:10s}
+    read-timeout: ${OPENAI_READ_TIMEOUT:45s}
+    max-concurrent-analyses: ${OPENAI_MAX_CONCURRENT_ANALYSES:4}
 
 ---
 spring:
@@ -72,6 +90,24 @@ spring:
   h2:
     console:
       enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:local-dev-client}
+            client-secret: ${GOOGLE_CLIENT_SECRET:local-dev-secret}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+
+app:
+  auth:
+    dev-bypass-enabled: ${DEV_AUTH_BYPASS_ENABLED:true}
+  meal-vision:
+    provider: ${MEAL_VISION_PROVIDER:mock}
