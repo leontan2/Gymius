@@ -2,7 +2,7 @@
   <div>
     <p class="eyebrow">Nutrition</p>
     <h1>Scan a meal, keep moving.</h1>
-    <p class="page-subtitle">Camera to estimate to confirmed calories, with room for your correction before it counts.</p>
+    <p class="page-subtitle">Photograph a meal, review the estimate, then confirm what counts toward today.</p>
   </div>
   <button class="btn primary" type="button" [disabled]="analyzing" (click)="openFilePicker(cameraInput)">
     <svg lucideCamera size="18"></svg>
@@ -14,6 +14,8 @@
   #cameraInput
   hidden
   type="file"
+  name="cameraMealPhoto"
+  aria-label="Take a meal photo"
   accept="image/jpeg,image/png,image/webp"
   capture="environment"
   (change)="onFileSelected($event)"
@@ -22,12 +24,14 @@
   #galleryInput
   hidden
   type="file"
+  name="galleryMealPhoto"
+  aria-label="Upload a meal photo"
   accept="image/jpeg,image/png,image/webp"
   (change)="onFileSelected($event)"
   >
 
 @if (loadingToday) {
-  <div class="loading-state" role="status" aria-live="polite">Loading nutrition...</div>
+  <div class="loading-state" role="status" aria-live="polite">Loading nutrition…</div>
 }
 @if (error) {
   <div class="error-state" role="alert">
@@ -82,6 +86,7 @@
         <input
           id="daily-calorie-target"
           type="number"
+          name="dailyCalories"
           min="800"
           max="8000"
           inputmode="numeric"
@@ -91,7 +96,7 @@
           [attr.aria-describedby]="goalForm.controls.dailyCalories.invalid && goalForm.controls.dailyCalories.touched ? 'daily-calorie-target-error' : null"
           >
         <button class="btn secondary" type="submit" [disabled]="savingGoal">
-          {{ savingGoal ? 'Saving...' : 'Save' }}
+          {{ savingGoal ? 'Saving…' : 'Save target' }}
         </button>
       </form>
       @if (goalForm.controls.dailyCalories.invalid && goalForm.controls.dailyCalories.touched) {
@@ -106,9 +111,9 @@
       <div class="section-heading">
         <div>
           <p class="eyebrow">Camera</p>
-          <h2>AI Food Calorie Scanner</h2>
+          <h2>Meal scanner</h2>
         </div>
-        <span class="chart-chip"><svg lucideSparkles size="16"></svg> AI-assisted estimate</span>
+        <span class="chart-chip"><svg lucideSparkles size="16"></svg> AI estimate</span>
       </div>
       <div class="meal-preview" [class.has-image]="previewUrl">
         @if (previewUrl) {
@@ -141,7 +146,7 @@
       @if (analyzing) {
         <div class="loading-state scanner-loading" role="status" aria-live="polite">
           <svg lucideSparkles size="18"></svg>
-          Analyzing your meal...
+          Analyzing your meal…
         </div>
       }
     </article>
@@ -204,6 +209,7 @@
               <span>Correct estimate</span>
               <input
                 type="number"
+                name="confirmedCalories"
                 min="0"
                 max="10000"
                 inputmode="numeric"
@@ -224,7 +230,8 @@
                 rows="3"
                 maxlength="1000"
                 formControlName="notes"
-                placeholder="Optional notes"
+                name="mealNotes"
+                placeholder="Optional notes…"
                 [attr.aria-invalid]="controlInvalid('notes')"
                 [attr.aria-describedby]="controlInvalid('notes') ? 'meal-notes-error' : null"
               ></textarea>
@@ -236,7 +243,7 @@
             </label>
             <button class="btn primary" type="submit" [disabled]="saving">
               <svg lucideBadgeCheck size="18"></svg>
-              <span>{{ saving ? 'Adding...' : 'Add to today\'s log' }}</span>
+              <span>{{ saving ? 'Adding…' : 'Add to today\'s log' }}</span>
             </button>
           </form>
         </div>
@@ -258,7 +265,7 @@
       <span class="chart-chip"><svg lucideClock size="16"></svg> {{ data.date | date: 'MMM d, y' }}</span>
     </div>
     @if (!data.entries.length) {
-      <div class="empty-state">
+      <div class="empty-state nutrition-log-empty">
         <h3>No meals logged yet</h3>
         <p>Your confirmed AI scans will appear here.</p>
       </div>

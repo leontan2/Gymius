@@ -7,7 +7,7 @@
 </section>
 
 @if (loading) {
-  <div class="loading-state" role="status" aria-live="polite">Loading records...</div>
+  <div class="loading-state" role="status" aria-live="polite">Loading records…</div>
 }
 @if (error) {
   <div class="error-state" role="alert">
@@ -17,19 +17,21 @@
 }
 
 @if (!loading && !error && !records.length) {
-  <div class="empty-state">
-    <h3>No records yet</h3>
-    <p>Records appear automatically once exercises are logged.</p>
-    <a class="btn primary" routerLink="/workouts/new">Log workout</a>
+  <div class="empty-state records-empty">
+    <p class="eyebrow">Your record board is clear</p>
+    <h3>Set the first benchmark</h3>
+    <p>Log a working set. Gymius will automatically keep the heaviest load and highest rep count for every exercise.</p>
+    <a class="btn primary" routerLink="/workouts/new">Log your first benchmark</a>
   </div>
 }
 
 @if (records.length) {
-  <section class="record-grid">
+  <section class="record-grid" aria-label="Personal record board">
     @for (record of records; track trackRecord($index, record)) {
       <article class="record-card">
+        <span class="record-rank" aria-hidden="true">{{ $index + 1 < 10 ? '0' + ($index + 1) : $index + 1 }}</span>
         <div class="record-card-head">
-          <span class="metric-icon amber"><svg lucideTrophy size="20"></svg></span>
+          <span class="metric-icon"><svg lucideTrophy size="20"></svg></span>
           <h2>{{ record.exerciseName }}</h2>
         </div>
         <div class="record-splits">

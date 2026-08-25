@@ -1,4 +1,5 @@
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -40,6 +41,7 @@ Chart.register(CategoryScale, LinearScale, LineController, LineElement, PointEle
   standalone: true,
   imports: [
     DecimalPipe,
+    RouterLink,
     LucideActivity,
     LucideBarChart3,
     LucideTrendingUp
@@ -51,7 +53,7 @@ export class ProgressComponent implements OnInit, OnDestroy {
   private readonly api = inject(ApiService);
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly theme = inject(ThemeService);
-  private readonly colors = ['#3ddc97', '#f9b233', '#4cc9f0', '#f15bb5', '#a78bfa', '#ef4444'];
+  private readonly colors = ['#cbf55c', '#84b8ab', '#e6bb6c', '#d28c7c', '#a7a1d6', '#8ea0bb'];
   private chart?: Chart<'line'>;
   private progressCanvas?: ElementRef<HTMLCanvasElement>;
 

@@ -10,8 +10,7 @@ import {
   LucideFlame,
   LucidePlus,
   LucideScale,
-  LucideTarget,
-  LucideTrophy
+  LucideTarget
 } from '@lucide/angular';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../core/api.service';
@@ -33,8 +32,7 @@ import { Dashboard, DashboardInsight } from '../../core/models';
     LucideFlame,
     LucidePlus,
     LucideScale,
-    LucideTarget,
-    LucideTrophy
+    LucideTarget
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.component.html'

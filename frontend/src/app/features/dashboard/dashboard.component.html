@@ -1,130 +1,102 @@
-<section class="page-header">
+<section class="page-header dashboard-header">
   <div>
-    <p class="eyebrow">Dashboard</p>
+    <p class="eyebrow">Training overview</p>
     <h1>Ready for the next set?</h1>
-    <p class="page-subtitle">Recent training, weekly consistency, and total volume at a glance.</p>
+    <p class="page-subtitle">See this week’s sessions, workload, recovery, and recent training.</p>
   </div>
   <a class="btn primary" routerLink="/workouts/new">
-    <svg lucidePlus size="18"></svg>
-    <span>Start workout</span>
+    <svg lucidePlus size="18"></svg><span>Start workout</span>
   </a>
 </section>
 
-@if (loading) {
-  <div class="loading-state" role="status" aria-live="polite">Loading dashboard...</div>
-}
+@if (loading) { <div class="loading-state" role="status" aria-live="polite">Loading dashboard...</div> }
 @if (error) {
   <div class="error-state" role="alert">
-    <span>{{ error }}</span>
-    <button class="btn secondary" type="button" (click)="loadDashboard()">Retry</button>
+    <span>{{ error }}</span><button class="btn secondary" type="button" (click)="loadDashboard()">Retry</button>
   </div>
 }
 
 @if (dashboard; as data) {
-  <section class="metrics-grid">
-    <article class="metric-card">
-      <span class="metric-icon"><svg lucideCalendarDays size="20"></svg></span>
-      <small>This week</small>
-      <strong>{{ data.weeklyWorkoutCount }}</strong>
-      <span>workouts logged</span>
-    </article>
-    <article class="metric-card">
-      <span class="metric-icon amber"><svg lucideScale size="20"></svg></span>
-      <small>Total volume</small>
-      <strong>{{ data.totalVolumeLifted | number: '1.0-0' }}</strong>
-      <span>lb lifted</span>
-    </article>
-    <article class="metric-card">
-      <span class="metric-icon blue"><svg lucideDumbbell size="20"></svg></span>
-      <small>Lifetime</small>
-      <strong>{{ data.totalWorkouts }}</strong>
-      <span>workouts</span>
-    </article>
-    <article class="metric-card highlight">
-      <span class="metric-icon rose"><svg lucideTrophy size="20"></svg></span>
-      <small>Next move</small>
-      <strong>Build</strong>
-      <a routerLink="/workouts/new">Log today's session <svg lucideArrowUpRight size="16"></svg></a>
-    </article>
-  </section>
-  <section class="section-block training-insights">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Training insights</p>
-        <h2>Weekly plan</h2>
-      </div>
-      <a class="text-link" routerLink="/progress">View progress</a>
-    </div>
-    <div class="insight-grid">
-      <article class="insight-focus">
+  <section class="dashboard-stage" aria-label="Weekly training summary">
+    <article class="insight-focus">
+      <div class="focus-heading">
         <span class="metric-icon"><svg lucideTarget size="20"></svg></span>
-        <div class="insight-copy">
-          <h3>{{ data.insight.guidanceTitle }}</h3>
-          <p>{{ data.insight.guidanceBody }}</p>
-        </div>
-        <div
-          class="goal-progress"
-          role="progressbar"
-          aria-label="Weekly workout goal progress"
-          aria-valuemin="0"
-          [attr.aria-valuemax]="data.insight.weeklyGoal"
-          [attr.aria-valuenow]="clampedProgress(data.weeklyWorkoutCount, data.insight.weeklyGoal)"
-          [attr.aria-valuetext]="data.weeklyWorkoutCount + ' workouts of a ' + data.insight.weeklyGoal + ' workout goal'"
-          >
-          <span [style.width.%]="data.insight.weeklyProgressPercent"></span>
-        </div>
-        <div class="insight-meta">
-          <span>{{ data.weeklyWorkoutCount }} / {{ data.insight.weeklyGoal }} workouts this week</span>
-          <span>{{ workoutsRemainingLabel(data.insight) }}</span>
-        </div>
-      </article>
-      <article class="insight-card">
-        <span class="metric-icon rose"><svg lucideFlame size="20"></svg></span>
-        <small>Active streak</small>
+        <span class="eyebrow">This week's signal</span>
+      </div>
+      <div class="insight-copy">
+        <h2>{{ data.insight.guidanceTitle }}</h2>
+        <p>{{ data.insight.guidanceBody }}</p>
+      </div>
+      <div class="goal-number">
+        <strong>{{ data.weeklyWorkoutCount }}</strong>
+        <span>of {{ data.insight.weeklyGoal }} sessions</span>
+      </div>
+      <div class="goal-progress" role="progressbar" aria-label="Weekly workout goal progress" aria-valuemin="0"
+        [attr.aria-valuemax]="data.insight.weeklyGoal"
+        [attr.aria-valuenow]="clampedProgress(data.weeklyWorkoutCount, data.insight.weeklyGoal)"
+        [attr.aria-valuetext]="data.weeklyWorkoutCount + ' workouts of a ' + data.insight.weeklyGoal + ' workout goal'">
+        <span [style.width.%]="data.insight.weeklyProgressPercent"></span>
+      </div>
+      <div class="insight-meta">
+        <span>{{ workoutsRemainingLabel(data.insight) }}</span>
+        <a routerLink="/progress">Open progress <svg lucideArrowUpRight size="15"></svg></a>
+      </div>
+    </article>
+
+    <div class="signal-stack">
+      <article class="signal-row">
+        <span class="metric-icon"><svg lucideFlame size="19"></svg></span>
+        <div><small>Active streak</small><span>{{ streakLabel(data.insight) }}</span></div>
         <strong>{{ data.insight.trainingStreakWeeks }}</strong>
-        <span>{{ streakLabel(data.insight) }}</span>
       </article>
-      <article class="insight-card">
-        <span class="metric-icon blue"><svg lucideClock size="20"></svg></span>
-        <small>Recovery</small>
+      <article class="signal-row">
+        <span class="metric-icon"><svg lucideClock size="19"></svg></span>
+        <div><small>Recovery</small><span>{{ lastWorkoutLabel(data.insight) }}</span></div>
         <strong>{{ lastWorkoutValue(data.insight) }}</strong>
-        <span>{{ lastWorkoutLabel(data.insight) }}</span>
       </article>
-      <article class="insight-card">
-        <span class="metric-icon amber"><svg lucideActivity size="20"></svg></span>
-        <small>30-day focus</small>
-        <strong>{{ data.insight.topExerciseName || 'None yet' }}</strong>
-        <span>{{ focusLabel(data.insight) }}</span>
+      <article class="signal-row">
+        <span class="metric-icon"><svg lucideActivity size="19"></svg></span>
+        <div><small>30-day focus</small><span>{{ focusLabel(data.insight) }}</span></div>
+        <strong class="signal-name">{{ data.insight.topExerciseName || 'None yet' }}</strong>
       </article>
     </div>
   </section>
-  <section class="section-block">
+
+  <section class="metrics-strip" aria-label="Lifetime training totals">
+    <article>
+      <span><svg lucideCalendarDays size="17"></svg>This week</span>
+      <strong>{{ data.weeklyWorkoutCount }}</strong><small>workouts</small>
+    </article>
+    <article>
+      <span><svg lucideScale size="17"></svg>Total volume</span>
+      <strong>{{ data.totalVolumeLifted | number: '1.0-0' }}</strong><small>lb lifted</small>
+    </article>
+    <article>
+      <span><svg lucideDumbbell size="17"></svg>Lifetime</span>
+      <strong>{{ data.totalWorkouts }}</strong><small>workouts</small>
+    </article>
+  </section>
+
+  <section class="section-block recent-block">
     <div class="section-heading">
-      <div>
-        <p class="eyebrow">Recent workouts</p>
-        <h2>Last sessions</h2>
-      </div>
-      <a class="text-link" routerLink="/workouts">View history</a>
+      <div><p class="eyebrow">Recent workouts</p><h2>Session ledger</h2></div>
+      <a class="text-link" routerLink="/workouts">View all history</a>
     </div>
     @if (!data.recentWorkouts.length) {
-      <div class="empty-state">
-        <h3>No workouts yet</h3>
-        <p>Your first logged workout will appear here.</p>
+      <div class="empty-state dashboard-empty">
+        <h3>Your first rep starts the record.</h3>
+        <p>Log a session to start measuring consistency, workload, and recovery.</p>
         <a class="btn primary" routerLink="/workouts/new">Start workout</a>
       </div>
     }
     @if (data.recentWorkouts.length) {
       <div class="workout-list compact">
         @for (workout of data.recentWorkouts; track trackWorkout($index, workout)) {
-          <a
-            class="workout-row"
-            [routerLink]="['/workouts', workout.id, 'edit']"
-            >
-            <span>
-              <strong>{{ workout.workoutDate | date: 'MMM d, y' }}</strong>
-              <small>{{ workout.exerciseCount }} exercises</small>
-            </span>
-            <span class="row-metric">{{ workout.totalVolume | number: '1.0-0' }} lb</span>
+          <a class="workout-row" [routerLink]="['/workouts', workout.id, 'edit']">
+            <span class="workout-index">0{{ $index + 1 }}</span>
+            <span><strong>{{ workout.workoutDate | date: 'EEE, MMM d' }}</strong><small>{{ workout.exerciseCount }} exercises</small></span>
+            <span class="row-metric">{{ workout.totalVolume | number: '1.0-0' }} <small>lb</small></span>
+            <svg lucideArrowUpRight size="17"></svg>
           </a>
         }
       </div>

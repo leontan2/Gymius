@@ -8,7 +8,7 @@
 </section>
 
 @if (loading) {
-  <div class="loading-state" role="status" aria-live="polite">Loading workout...</div>
+  <div class="loading-state" role="status" aria-live="polite">Loading workout…</div>
 }
 @if (error) {
   <div class="error-state" role="alert">
@@ -33,6 +33,7 @@
           <span><svg lucideCalendarDays size="16"></svg> Date</span>
           <input
             type="date"
+            name="workoutDate"
             formControlName="workoutDate"
             [max]="maxDate"
             required
@@ -61,7 +62,8 @@
             rows="3"
             formControlName="notes"
             maxlength="1000"
-            placeholder="Optional notes"
+            name="sessionNotes"
+            placeholder="Optional notes…"
             [attr.aria-invalid]="controlIsInvalid(form.controls.notes)"
             [attr.aria-describedby]="controlIsInvalid(form.controls.notes) ? 'workout-notes-error' : null"
           ></textarea>
@@ -112,10 +114,11 @@
                 <span>Name</span>
                 <input
                   type="text"
+                  [attr.name]="'exerciseName-' + i"
                   formControlName="exerciseName"
                   maxlength="120"
                   autocomplete="off"
-                  placeholder="Bench press"
+                  placeholder="e.g. Bench press"
                   required
                   [attr.aria-invalid]="controlIsInvalid(exerciseGroup.controls.exerciseName)"
                   [attr.aria-describedby]="controlIsInvalid(exerciseGroup.controls.exerciseName) ? 'exercise-name-error-' + i : null"
@@ -135,6 +138,7 @@
                 <span>Sets</span>
                 <input
                   type="number"
+                  [attr.name]="'exerciseSets-' + i"
                   min="1"
                   max="100"
                   inputmode="numeric"
@@ -153,6 +157,7 @@
                 <span>Reps</span>
                 <input
                   type="number"
+                  [attr.name]="'exerciseReps-' + i"
                   min="1"
                   max="1000"
                   inputmode="numeric"
@@ -171,6 +176,7 @@
                 <span>Weight (lb)</span>
                 <input
                   type="number"
+                  [attr.name]="'exerciseWeight-' + i"
                   min="0"
                   max="999999.99"
                   step="0.5"
@@ -190,9 +196,10 @@
                 <span>Notes</span>
                 <input
                   type="text"
+                  [attr.name]="'exerciseNotes-' + i"
                   formControlName="notes"
                   maxlength="500"
-                  placeholder="Optional"
+                  placeholder="Optional notes…"
                   [attr.aria-invalid]="controlIsInvalid(exerciseGroup.controls.notes)"
                   [attr.aria-describedby]="controlIsInvalid(exerciseGroup.controls.notes) ? 'exercise-notes-error-' + i : null"
                   >
@@ -211,7 +218,7 @@
       <a class="btn secondary" routerLink="/workouts">Cancel</a>
       <button class="btn primary" type="submit" [disabled]="saving">
         <svg lucideSave size="18"></svg>
-        <span>{{ saving ? 'Saving...' : 'Save workout' }}</span>
+        <span>{{ saving ? 'Saving…' : 'Save workout' }}</span>
       </button>
     </div>
   </form>

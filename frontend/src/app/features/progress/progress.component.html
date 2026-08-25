@@ -7,7 +7,7 @@
 </section>
 
 @if (loading) {
-  <div class="loading-state" role="status" aria-live="polite">Loading progress...</div>
+  <div class="loading-state" role="status" aria-live="polite">Loading progress…</div>
 }
 @if (error) {
   <div class="error-state" role="alert">
@@ -73,9 +73,11 @@
     </section>
   }
   @if (!chartData.datasets.length) {
-    <div class="empty-state">
-      <h3>No progress yet</h3>
-      <p>Add workouts with weighted exercises to see trends here.</p>
+    <div class="empty-state progress-empty">
+      <p class="eyebrow">Build your first trend</p>
+      <h3>No strength data yet</h3>
+      <p>Log a weighted exercise and Gymius will chart the change from session to session.</p>
+      <a class="btn primary" routerLink="/workouts/new">Log a weighted exercise</a>
     </div>
   }
 }
